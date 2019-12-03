@@ -5,22 +5,66 @@
  * @format
  * @flow
  */
-
+import SearchScreen from './src/components/screens/SearchScreen';
 import React from 'react';
 import MapScreen from './src/components/screens/MapScreen';
 import ProfileScreen from './src/components/screens/ProfileScreen';
+import NewsScreen from './src/components/screens/NewsScreen';
+import ListScreen from './src/components/screens/ListScreen';
 import {createMaterialTopTabNavigator} from 'react-navigation-tabs';
-import {createAppContainer} from 'react-navigation';
-
+import {createAppContainer, createSwitchNavigator} from 'react-navigation';
+import {createStackNavigator} from 'react-navigation-stack';
+import CoffeeStoreScreen from './src/components/screens/CoffeeStoreScreen';
+import {coffee_color} from './src/color';
+import LoginScreen from './src/components/screens/LoginScreen';
+import SignUpScreen from './src/components/screens/SignUpScreen';
+import LoadingScreen from './src/components/screens/LoadingScreen';
+import ForgotPasswordScreen from './src/components/screens/ForgotPasswordScreen';
+import Icon from 'react-native-vector-icons/FontAwesome5';
+import OptionsPicker from './src/components/screens/OptionsPicker';
+const MapsStack = createStackNavigator({
+  Maps: MapScreen,
+});
+const NewsStack = createStackNavigator({
+  News: {screen: NewsScreen},
+});
+const ListStack = createStackNavigator({
+  List: ListScreen,
+});
+const ProfileStack = createStackNavigator({
+  Profile: ProfileScreen,
+});
+MapsStack.navigationOptions = {
+  tabBarLabel: 'Bản đồ',
+  tabBarIcon: ({tintColor}) => (
+    <Icon name="map-marked-alt" size={20} color={tintColor} />
+  ),
+};
+NewsStack.navigationOptions = {
+  tabBarLabel: 'Tin tức',
+  tabBarIcon: ({tintColor, focused}) => (
+    <Icon name="newspaper" size={20} color={tintColor} />
+  ),
+};
+ListStack.navigationOptions = {
+  tabBarLabel: 'Yêu thích',
+  tabBarIcon: ({tintColor, focused}) => (
+    <Icon name="list-ul" size={20} color={tintColor} />
+  ),
+};
+ProfileStack.navigationOptions = {
+  tabBarLabel: 'Tài khoản',
+  tabBarIcon: ({tintColor, focused}) => (
+    <Icon name="address-card" size={20} color={tintColor} />
+  ),
+};
 const TabMaterialNavigator = createMaterialTopTabNavigator(
   {
     //RouteConfigs
-    Maps: {
-      screen: MapScreen,
-    },
-    Profile: {
-      screen: ProfileScreen,
-    },
+    Maps: MapsStack,
+    News: NewsStack,
+    List: ListStack,
+    Profile: ProfileStack,
   },
   {
     // MaterialBottomTabNavigatorConfig
@@ -28,11 +72,11 @@ const TabMaterialNavigator = createMaterialTopTabNavigator(
     initialRouteName: 'Maps',
     tabBarOptions: {
       showIcon: true,
-      activeTintColor: '#ff792c',
+      activeTintColor: coffee_color,
       pressColor: '#F3B473',
       inactiveTintColor: '#000000',
       style: {
-        borderTopColor: '#ff792c',
+        borderTopColor: coffee_color,
         borderTopWidth: 0.8,
         backgroundColor: '#ffffff',
       },
@@ -50,7 +94,51 @@ const TabMaterialNavigator = createMaterialTopTabNavigator(
     },
   },
 );
-const AppContainer = createAppContainer(TabMaterialNavigator);
+TabMaterialNavigator.navigationOptions = {
+  // Hide the header from AppNavigator stack
+  headerShown: false,
+};
+const StackNavigator = createStackNavigator({
+  MapScreen: {
+    screen: TabMaterialNavigator,
+  },
+  DetailStore: {
+    screen: CoffeeStoreScreen,
+  },
+  Search: {
+    screen: SearchScreen,
+  },
+  Option: OptionsPicker,
+});
+StackNavigator.navigationOptions = {
+  // Hide the header from AppNavigator stack
+  tabBarVisible: false,
+};
+const AuthStack = createStackNavigator(
+  {
+    Login: LoginScreen,
+    Register: SignUpScreen,
+    Forgot: ForgotPasswordScreen,
+  },
+  {
+    navigationOptions: ({navigation}) => ({
+      headerStyle: {
+        height: 100,
+      },
+    }),
+  },
+);
+const SwitchNav = createSwitchNavigator(
+  {
+    Loading: LoadingScreen,
+    App: StackNavigator,
+    Auth: AuthStack,
+  },
+  {
+    initialRouteName: 'Loading',
+  },
+);
+const AppContainer = createAppContainer(SwitchNav);
 const App: () => React$Node = () => {
   return <AppContainer />;
 };
