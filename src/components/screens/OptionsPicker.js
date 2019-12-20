@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 import {
   SafeAreaView,
   TouchableOpacity,
@@ -55,7 +55,7 @@ function Item({id, name, selected, onSelect}) {
   );
 }
 
-export default function App() {
+function App() {
   const [selected, setSelected] = React.useState(new Map());
 
   const onSelect = React.useCallback(
@@ -103,7 +103,14 @@ export default function App() {
     </View>
   );
 }
-
+export default class OptionsPicker extends Component {
+  static navigationOptions = {
+    headerTransparent: true,
+  };
+  render() {
+    return <App />;
+  }
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,

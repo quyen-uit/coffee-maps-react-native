@@ -5,7 +5,8 @@ import {Button, Card} from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {BarChart, YAxis} from 'react-native-svg-charts';
 import ListCommentCard from './ListCommentCard';
-import coffee_color from '../../color';
+import {firebaseApp} from '../FirebaseApp';
+import {coffee_color} from '../../color';
 import {
   TextInput,
   Animated,
@@ -33,28 +34,6 @@ const list = [
     img: require('../../assets/h2.jpg'),
   },
 ];
-const data = [
-  {
-    value: 50,
-    label: '1',
-  },
-  {
-    value: 10,
-    label: '2',
-  },
-  {
-    value: 40,
-    label: '3',
-  },
-  {
-    value: 95,
-    label: '4',
-  },
-  {
-    value: 85,
-    label: '5',
-  },
-];
 
 const HEADER_MAX_HEIGHT = 260;
 const HEADER_MIN_HEIGHT = 100;
@@ -64,30 +43,6 @@ const SCREEN_HEIGHT = height;
 const SCREEN_WIDTH = width;
 
 const listInfo = [
-  {
-    title: 'dia chi',
-    icon: 'map-marker-alt',
-  },
-  {
-    title: 'gio mo cua - dong cua',
-    icon: 'clock',
-  },
-  {
-    title: 'sdt',
-    icon: 'phone',
-  },
-  {
-    title: 'dia chi',
-    icon: 'map-marker-alt',
-  },
-  {
-    title: 'gio mo cua - dong cua',
-    icon: 'clock',
-  },
-  {
-    title: 'sdt',
-    icon: 'phone',
-  },
   {
     title: 'dia chi',
     icon: 'map-marker-alt',
@@ -129,11 +84,76 @@ export default class App extends Component {
   };
   constructor(props) {
     super(props);
+    this.itemRef = firebaseApp.database();
+    var item = [];
+    this.itemRef
+      .ref('tchCor/' + this.props.navigation.getParam('key'))
+      .on('value', snapshot => {
+        item.name = snapshot.val().name;
+        item.branch = snapshot.val().branch;
+        item.address = snapshot.val().address;
+        item.one = snapshot.val().oneStar;
+        item.two = snapshot.val().twoStar;
+        item.three = snapshot.val().threeStar;
+        item.four = snapshot.val().fourStar;
+        item.five = snapshot.val().fiveStar;
+      });
+    item.sum = item.one + item.two + item.three + item.four + item.five;
+    item.averageStar =
+      Math.round(
+        ((item.one +
+          item.two * 2 +
+          item.three * 3 +
+          item.four * 4 +
+          item.five * 5) /
+          (item.one + item.two + item.three + item.four + item.five)) *
+          10,
+      ) / 10;
 
+    switch (item.name) {
+      case 'The Coffee House': {
+        this.itemRef.ref('stores/tch').on('value', snapshot => {
+          item.closeTime = snapshot.val().closeTime;
+          item.openTime = snapshot.val().openTime;
+          item.phone = snapshot.val().phone;
+        });
+        break;
+      }
+
+      case 'Highlands Coffee': {
+        this.itemRef.ref('stores/highland').on('value', snapshot => {
+          item.closeTime = snapshot.val().closeTime;
+          item.openTime = snapshot.val().openTime;
+          item.phone = snapshot.val().phone;
+        });
+      }
+    }
     this.state = {
       scrollY: new Animated.Value(0),
       refreshing: false,
-      starCount: 3.3,
+      data: item,
+      listStar: [
+        {
+          value: item.one,
+          label: '1',
+        },
+        {
+          value: item.two,
+          label: '2',
+        },
+        {
+          value: item.three,
+          label: '3',
+        },
+        {
+          value: item.four,
+          label: '4',
+        },
+        {
+          value: item.five,
+          label: '5',
+        },
+      ],
     };
     this._didFocusSubscription = props.navigation.addListener(
       'didFocus',
@@ -197,11 +217,11 @@ export default class App extends Component {
               marginLeft: 20,
             }}>
             <YAxis
-              data={data}
+              data={this.state.listStar}
               yAccessor={({index}) => index}
               contentInset={{top: 5, bottom: 5}}
               numberOfTicks={5}
-              formatLabel={(_, index) => data[index].label}
+              formatLabel={(_, index) => this.state.listStar[index].label}
               style={{
                 flexGrow: 0,
                 paddingHorizontal: 5,
@@ -211,7 +231,7 @@ export default class App extends Component {
             />
             <BarChart
               style={{flex: 1, marginLeft: 10}}
-              data={data}
+              data={this.state.listStar}
               horizontal={true}
               yAccessor={({item}) => item.value}
               svg={{fill: coffee_color}}
@@ -222,7 +242,7 @@ export default class App extends Component {
           <View>
             <Text
               style={{fontSize: 36, fontWeight: 'bold', alignSelf: 'center'}}>
-              3.5
+              {this.state.data.averageStar}
             </Text>
             <View style={{width: 100}}>
               <StarRating
@@ -231,13 +251,12 @@ export default class App extends Component {
                 disabled={false}
                 maxStars={5}
                 starSize={16}
-                rating={this.state.starCount}
+                rating={this.state.data.averageStar}
                 selectedStar={rating => this.onStarRatingPress(rating)}
               />
             </View>
-            <Text
-              style={{fontSize: 24, fontWeight: 'bold', alignSelf: 'center'}}>
-              (99)
+            <Text style={{fontSize: 20, alignSelf: 'center'}}>
+              {'(' + this.state.data.sum + ')'}
             </Text>
           </View>
         </View>
@@ -296,12 +315,45 @@ export default class App extends Component {
             {nativeEvent: {contentOffset: {y: this.state.scrollY}}},
           ])}>
           <View style={{paddingTop: HEADER_MAX_HEIGHT}}>
-            <FlatList
-              showsHorizontalScrollIndicator={false}
-              data={listInfo}
-              renderItem={({item}) => this.renderInfo(item)}
-              keyExtractor={item => item.id}
-            />
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                flexDirection: 'row',
+                padding: 12,
+              }}>
+              <Icon name="map-marker-alt" size={24} color={coffee_color} />
+              <Text style={{fontSize: 16, marginLeft: 8}}>
+                {this.state.data.address}
+              </Text>
+            </View>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                flexDirection: 'row',
+                padding: 12,
+              }}>
+              <Icon name="clock" size={24} color={coffee_color} />
+              <Text style={{fontSize: 16, marginLeft: 8}}>
+                {'Giờ mở cửa: ' +
+                  this.state.data.openTime +
+                  ' - ' +
+                  this.state.data.closeTime}
+              </Text>
+            </View>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                flexDirection: 'row',
+                padding: 12,
+              }}>
+              <Icon name="phone" size={24} color={coffee_color} />
+              <Text style={{fontSize: 16, marginLeft: 8}}>
+                {this.state.data.phone}
+              </Text>
+            </View>
           </View>
           <View style={{borderColor: '#ccc', borderWidth: 1, padding: 10}}>
             <View
@@ -377,13 +429,13 @@ export default class App extends Component {
             keyExtractor={item => item.id}
           />
           <View style={styles.title}>
-            <View>
+            <View style={{flex: 8}}>
               <Text style={{fontSize: 24, margin: 10, marginLeft: 45}}>
-                The Coffee House
+                {this.state.data.name + ' - ' + this.state.data.branch}
               </Text>
               <Text style={{marginLeft: 50}}>******</Text>
             </View>
-            <View style={{marginRight: 10}}>
+            <View style={{marginRight: 10, flex: 1}}>
               <TouchableOpacity style={styles.btnBookmark}>
                 <Icon
                   name="bookmark"

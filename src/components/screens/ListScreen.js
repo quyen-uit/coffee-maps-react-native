@@ -1,27 +1,33 @@
 /* eslint-disable react-native/no-inline-styles */
-import {FlatList, Text, View, StyleSheet} from 'react-native';
+import {FlatList, Text, Dimensions, View, StyleSheet} from 'react-native';
 import {Button} from 'react-native-elements';
 import React from 'react';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {coffee_color} from '../../color';
+
+const {width, height} = Dimensions.get('window');
+
 const list = [
   {
     id: 'l1',
     title: 'Cửa hàng yêu thích',
     icon: 'gratipay',
-    colorBtn: '#ff1',
+    colorBtn: '#fd79a8',
+    number: 10,
   },
   {
     id: 'l2',
     title: 'Cửa hàng đã xem',
+    number: 10,
     icon: 'eye',
-    colorBtn: '#f12',
+    colorBtn: '#0abde3',
   },
   {
     id: 'l3',
+    number: 10,
     title: 'Cửa hàng không thích',
     icon: 'heart-broken',
-    colorBtn: '#f92',
+    colorBtn: '#8395a7',
   },
 ];
 
@@ -45,25 +51,35 @@ export default class ListScreen extends React.Component {
     return (
       <Button
         icon={
-          <Icon name={item.icon} size={30} color="black" marginVertical={10} />
+          <Icon name={item.icon} size={50}  marginVertical={10} color="#000"/>
         }
         title={item.title}
         buttonStyle={{
           backgroundColor: item.colorBtn,
           justifyContent: 'flex-start',
-          height: 150,
+          height: height / 5,
         }}
         containerStyle={{marginVertical: 4}}
-        titleStyle={{color: '#000', fontSize: 30, marginLeft: 20}}
+        titleStyle={{color: '#fff', fontSize: 30, marginLeft: 20}}
       />
+    );
+  };
+  renderNumber = item => {
+    return (
+      <View>
+        <Icon name={item.icon} size={50} color={item.colorBtn} marginVertical={10} />
+        <Text style={{fontSize: 30, alignSelf: 'center'}}>{item.number}</Text>
+      </View>
     );
   };
   render() {
     return (
       <View style={styles.container}>
+        <View style={{flexDirection: 'row', justifyContent: 'space-around', marginVertical: 16}}>
+          {list.map(item => this.renderNumber(item))}
+        </View>
         <View>
           <FlatList
-            style={{marginBottom: 60}}
             scrollEnabled={true}
             data={list}
             renderItem={({item}) => this.renderOption(item)}
@@ -77,7 +93,7 @@ export default class ListScreen extends React.Component {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#ccc',
+    backgroundColor: '#f0f0f0',
     display: 'flex',
     flex: 0,
   },

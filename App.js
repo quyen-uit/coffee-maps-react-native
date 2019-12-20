@@ -5,6 +5,7 @@
  * @format
  * @flow
  */
+import DemoMaps from './src/components/screens/demo_maps';
 import SearchScreen from './src/components/screens/SearchScreen';
 import React from 'react';
 import MapScreen from './src/components/screens/MapScreen';

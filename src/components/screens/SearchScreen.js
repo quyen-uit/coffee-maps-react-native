@@ -36,6 +36,7 @@ export default class SearchScreen extends Component {
           address: childSnapshot.val().address,
           lat: childSnapshot.val().lat,
           long: childSnapshot.val().long,
+          key: childSnapshot.key,
         });
       });
     });
@@ -46,14 +47,23 @@ export default class SearchScreen extends Component {
       list: [],
       srcItem: items,
       testParam: 'noParam',
+      isSelect: false,
     };
+    this.setState({isSelect: false});
     this.arrayholder = [];
   }
   goToMapScreen = item => {
-    this.props.navigation.push('MapScreen', {
-      lat: item.lat,
-      long: item.long,
-      isSelect: true,
+    const {navigation} = this.props;
+    const {routeName, key} = navigation.getParam('returnToRoute');
+    navigation.navigate({
+      routeName,
+      key,
+      params: {
+        otherParam: item.key,
+        isSelect: !this.state.isSelect,
+        isAnimateToMaker: true,
+        showSearchLocation: true,
+      },
     });
   };
   fetchDb = text => {

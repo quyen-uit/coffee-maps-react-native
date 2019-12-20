@@ -28,6 +28,8 @@ export default class SignInScreen extends React.Component {
     super(props);
     this.state = {
       showPass: true,
+      firstName: null,
+      lastName: null,
       press: false,
       email: '',
       password: '',
@@ -44,6 +46,13 @@ export default class SignInScreen extends React.Component {
       .auth()
       .createUserWithEmailAndPassword(this.state.email, this.state.password)
       .then(userCredentials => {
+        firebase
+          .database()
+          .ref('users/' + userCredentials.uid)
+          .set({
+            firstName: this.state.firstName,
+            lastName: this.state.lastName,
+          });
         firebase.auth().currentUser.sendEmailVerification();
         return userCredentials.user.updateProfile({
           displayName: this.state.name,
