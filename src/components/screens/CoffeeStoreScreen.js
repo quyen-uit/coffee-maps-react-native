@@ -86,52 +86,62 @@ export default class App extends Component {
     super(props);
     this.itemRef = firebaseApp.database();
     var item = [];
-    this.itemRef
-      .ref('tchCor/' + this.props.navigation.getParam('key'))
-      .on('value', snapshot => {
-        item.name = snapshot.val().name;
-        item.branch = snapshot.val().branch;
-        item.address = snapshot.val().address;
-        item.one = snapshot.val().oneStar;
-        item.two = snapshot.val().twoStar;
-        item.three = snapshot.val().threeStar;
-        item.four = snapshot.val().fourStar;
-        item.five = snapshot.val().fiveStar;
-      });
-    item.sum = item.one + item.two + item.three + item.four + item.five;
-    item.averageStar =
-      Math.round(
-        ((item.one +
-          item.two * 2 +
-          item.three * 3 +
-          item.four * 4 +
-          item.five * 5) /
-          (item.one + item.two + item.three + item.four + item.five)) *
-          10,
-      ) / 10;
+    var store;
+    var mn = [];
+    this.itemRef = firebaseApp.database();
 
-    switch (item.name) {
+    // item.sum = item.one + item.two + item.three + item.four + item.five;
+    // item.averageStar =
+    //   Math.round(
+    //     ((item.one +
+    //       item.two * 2 +
+    //       item.three * 3 +
+    //       item.four * 4 +
+    //       item.five * 5) /
+    //       (item.one + item.two + item.three + item.four + item.five)) *
+    //       10,
+    //   ) / 10;
+    store = this.props.navigation.getParam('key') ;
+    switch (store.name) {
       case 'The Coffee House': {
         this.itemRef.ref('stores/tch').on('value', snapshot => {
-          item.closeTime = snapshot.val().closeTime;
-          item.openTime = snapshot.val().openTime;
-          item.phone = snapshot.val().phone;
+          store.closeTime = snapshot.val().closeTime;
+          store.openTime = snapshot.val().openTime;
+          store.phone = snapshot.val().phone;
+        });
+        this.itemRef.ref('menu/tch').on('child_added', snapshot => {
+          mn.push({
+            name: snapshot.val().name,
+            price: snapshot.val().price,
+            image: snapshot.val().image,
+            key: snapshot.key,
+          })
         });
         break;
       }
 
       case 'Highlands Coffee': {
         this.itemRef.ref('stores/highland').on('value', snapshot => {
-          item.closeTime = snapshot.val().closeTime;
-          item.openTime = snapshot.val().openTime;
-          item.phone = snapshot.val().phone;
+          store.closeTime = snapshot.val().closeTime;
+          store.openTime = snapshot.val().openTime;
+          store.phone = snapshot.val().phone;
+        });
+        this.itemRef.ref('menu/highland').on('child_added', snapshot => {
+          mn.push({
+            name: snapshot.val().name,
+            price: snapshot.val().price,
+            image: snapshot.val().image,
+            key: snapshot.key,
+          })
         });
       }
     }
+    console.log(mn);
     this.state = {
       scrollY: new Animated.Value(0),
       refreshing: false,
-      data: item,
+      data: store,
+      menu: mn,
       listStar: [
         {
           value: item.one,
@@ -283,14 +293,15 @@ export default class App extends Component {
   renderCard = item => {
     return (
       <Card
-        image={item.img}
+        image={{uri: item.image}}
         containerStyle={styles.card}
         imageProps={{borderRadius: 10}}
         imageStyle={{
           height: 120,
+
         }}>
-        <Text style={{marginBottom: 4}}>{item.text}</Text>
-        <Text style={{marginBottom: 10}}>{item.gia}</Text>
+        <Text style={{marginBottom: 4, fontWeight: 'bold'}}>{item.name}</Text>
+        <Text style={{marginBottom: 10}}>{item.price}</Text>
       </Card>
     );
   };
@@ -379,7 +390,7 @@ export default class App extends Component {
             <FlatList
               showsHorizontalScrollIndicator={false}
               horizontal={true}
-              data={menu}
+              data={this.state.menu}
               renderItem={({item}) => this.renderCard(item)}
               keyExtractor={item => item.id}
             />

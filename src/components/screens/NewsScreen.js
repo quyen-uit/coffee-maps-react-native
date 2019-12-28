@@ -65,16 +65,24 @@ export default class NewsScreen extends React.Component {
         title: snapshot.val().title,
         summary: snapshot.val().summary,
         store: snapshot.val().store,
+        cover: snapshot.val().cover,
+        date: snapshot.val().date,
       });
     });
     this.state = {
       list: [{l: item, name: 'Tin mới'}, {l: item, name: 'Khuyến mãi'}],
     };
   }
+  goToDetail = (item) =>{
+    this.props.navigation.navigate('DetailNews', {
+      value: item,
+    });
+  }
+
   renderCard = item => {
     return (
       <Card
-        image={require('../../assets/capheden.jpg')}
+        image={{uri: item.cover}}
         containerStyle={styles.card}
         imageProps={{borderTopRightRadius: 10, borderTopLeftRadius: 10}}
         imageStyle={{
@@ -92,6 +100,7 @@ export default class NewsScreen extends React.Component {
         </Text>
         <View>
           <Button
+          onPress={()=>this.goToDetail(item)}
             buttonStyle={{
               marginBottom: 10,
               marginTop: 10,

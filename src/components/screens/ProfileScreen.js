@@ -1,4 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
+import Dialog from 'react-native-dialog';
 import {Button} from 'react-native-elements';
 import {
   Text,
@@ -9,15 +10,16 @@ import {
   StyleSheet,
   YellowBox,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import React from 'react';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import Header from '../Header';
 import * as firebase from 'firebase';
-import {TouchableOpacity} from 'react-native-gesture-handler';
+
 import ImagePicker from 'react-native-image-picker';
 import RNFetchBlob from 'rn-fetch-blob';
-import firebaseApp from '../FirebaseApp';
+import {firebaseApp} from '../FirebaseApp';
 import {sort} from 'semver';
 import {coffee_color} from '../../color';
 
@@ -42,17 +44,7 @@ window.fetch = new Fetch({
   // contains string `application/octet`.
   binaryContentTypes: ['image/', 'video/', 'audio/', 'foo/'],
 }).build();
-const listOptions = [
-  {
-    title: 'Thông tin tài khoản',
-  },
-  {
-    title: 'Lịch sử',
-  },
-  {
-    title: 'Giúp đỡ',
-  },
-];
+
 const options = {
   title: 'Select Avatar',
   customButtons: [{name: 'fb', title: 'Choose Photo from Facebook'}],
@@ -61,16 +53,31 @@ const options = {
     path: 'images',
   },
 };
-
+var n, a;
+firebaseApp
+  .database()
+  .ref('users/' + firebase.auth().currentUser.uid + '/name')
+  .on('value', snapshot => {
+    n = snapshot.val();
+  });
+firebaseApp
+  .database()
+  .ref('users/' + firebase.auth().currentUser.uid + '/avatar')
+  .on('value', snapshot => {
+    a = snapshot.val();
+  });
 export default class ProfileScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      showDialog: false,
+      name: n,
+      newName: null,
       imgAvatar: require('../../assets/img_demo.jpg'),
       loading: false,
       dp: null,
       image: null,
-      image_uri: 'https://firebasestorage.googleapis.com/v0/b/rn-coffee-maps.appspot.com/o/userAvatar%2Favatar?alt=media&token=a9eb5b50-f667-4232-bc6a-e961f26505fb',
+      image_uri: a,
     };
   }
 
@@ -89,7 +96,21 @@ export default class ProfileScreen extends React.Component {
     },
     headerTintColor: '#fff',
   };
+  updateNameofUser = () => {
+    this.setState({name: this.state.newName, showDialog: false});
 
+    firebaseApp
+      .database()
+      .ref('users/' + firebase.auth().currentUser.uid)
+      .set({
+        name: this.state.newName,
+        avatar: this.state.image_uri
+      });
+    // firebase.auth().currentUser.updateProfile({
+    //   displayName: this.state.newName,
+    // });
+    // console.log(firebase.auth().currentUser.displayName);
+  };
   uploadImage = (uri, imageName, mime = 'application/octet-stream') => {
     return new Promise((resolve, reject) => {
       const uploadUri =
@@ -98,7 +119,7 @@ export default class ProfileScreen extends React.Component {
       const imageRef = firebaseApp
         .storage()
         .ref('userAvatar')
-        .child('user');
+        .child('user/' + firebase.auth().currentUser.uid);
       fs.readFile(uploadUri, 'base64')
         .then(data => {
           return Blob.build(data, {type: `${mime};BASE64`});
@@ -138,20 +159,17 @@ export default class ProfileScreen extends React.Component {
         this.uploadImage(response.uri, 'aaaa')
           .then(url => {
             this.setState({image_uri: url});
+            firebaseApp
+              .database()
+              .ref('users/' + firebase.auth().currentUser.uid)
+              .set({
+                name: this.state.name,
+                avatar: url,
+              });
           })
           .catch(error => console.log(error));
       }
     });
-  };
-  renderOption = item => {
-    return (
-      <Button
-        title={item.title}
-        buttonStyle={{backgroundColor: '#fff', justifyContent: 'flex-start'}}
-        containerStyle={{marginVertical: 4}}
-        titleStyle={{color: '#000'}}
-      />
-    );
   };
 
   signOutUser = () => {
@@ -161,34 +179,58 @@ export default class ProfileScreen extends React.Component {
     return (
       <View style={styles.container}>
         <View>
-          <FlatList
-            ListHeaderComponent={
-              <View style={styles.info}>
-                <Image
-                  style={styles.avatar}
-                  source={{uri: this.state.image_uri}}
-                />
-                <Text style={{fontSize: 24, marginTop: 10, fontWeight: 'bold'}}>
-                  Tên tài khoản
-                </Text>
-                <TouchableOpacity onPress={this.pickAvatar}>
-                  <Icon name="edit" size={48} />
-                </TouchableOpacity>
-              </View>
-            }
-            style={{marginBottom: 60}}
-            scrollEnabled={true}
-            data={listOptions}
-            renderItem={({item}) => this.renderOption(item)}
-            keyExtractor={item => item.id}
+          <View style={styles.info}>
+            <View style={{alignSelf: 'flex-end', marginRight: 16}}>
+              <TouchableOpacity onPress={this.pickImg}>
+                <Icon name="edit" size={32} />
+              </TouchableOpacity>
+            </View>
+            <Image style={styles.avatar} source={{uri: this.state.image_uri}} />
+            <Text style={{fontSize: 24, marginTop: 10, fontWeight: 'bold'}}>
+              {this.state.name}
+            </Text>
+          </View>
+          <View>
+            <Dialog.Container visible={this.state.showDialog}>
+              <Dialog.Title>Nhập tên mới</Dialog.Title>
+              <Dialog.Input
+                autoFocus={true}
+                onChangeText={text =>
+                  this.setState({newName: text})
+                }></Dialog.Input>
+              <Dialog.Button
+                label="Hủy"
+                onPress={() => this.setState({showDialog: false})}
+              />
+              <Dialog.Button
+                label="Sửa"
+                onPress={() => this.updateNameofUser()}
+              />
+            </Dialog.Container>
+          </View>
+          <Button
+            title={'Sửa tên người dùng'}
+            buttonStyle={styles.btn}
+            containerStyle={{marginVertical: 4}}
+            titleStyle={{color: '#000'}}
+            onPress={() => this.setState({showDialog: true})}
+          />
+          <Button
+            title={'Cài đặt'}
+            buttonStyle={styles.btn}
+            containerStyle={{marginVertical: 4}}
+            titleStyle={{color: '#000'}}
+          />
+          <Button
+            title={'Giúp đỡ'}
+            buttonStyle={styles.btn}
+            containerStyle={{marginVertical: 4}}
+            titleStyle={{color: '#000'}}
           />
           <Button
             onPress={this.pickImg}
             title={'Thoát'}
-            buttonStyle={{
-              backgroundColor: '#fff',
-              justifyContent: 'flex-start',
-            }}
+            buttonStyle={styles.btn}
             containerStyle={{marginVertical: 4}}
             titleStyle={{color: '#000'}}
           />
@@ -202,12 +244,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     display: 'flex',
     flex: 0,
-    backgroundColor: '#c1c1c1',
+    backgroundColor: '#f0f0f0',
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 70,
   },
   info: {
     height: SCREEN_HEIGHT / 3,
@@ -220,5 +262,10 @@ const styles = StyleSheet.create({
   },
   option: {
     display: 'flex',
+  },
+  btn: {
+    backgroundColor: '#fff',
+    justifyContent: 'flex-start',
+    paddingLeft: 16,
   },
 });

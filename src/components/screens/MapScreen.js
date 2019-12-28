@@ -1,6 +1,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
+
 import MapViewDirections from 'react-native-maps-directions';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import React from 'react';
@@ -15,6 +16,7 @@ import {
   PermissionsAndroid,
   Dimensions,
   Image,
+  Button,
 } from 'react-native';
 
 import {Card} from 'react-native-elements';
@@ -54,7 +56,11 @@ export default class MapScreen extends React.Component {
   constructor(props) {
     super(props);
     var item = [];
+    var img;
     this.itemRef = firebaseApp.database();
+    this.itemRef.ref('stores/tch/imgMarker').on('value', snapshot => {
+      img = snapshot.val();
+    });
     this.itemRef.ref('tchCor').on('child_added', snapshot => {
       item.push({
         name: snapshot.val().name,
@@ -62,27 +68,48 @@ export default class MapScreen extends React.Component {
         image: snapshot.val().image,
         latitude: snapshot.val().lat,
         longitude: snapshot.val().long,
-        marker: require('../../assets/tch.png'),
+        marker: img,
         district: snapshot.val().district,
         key: snapshot.key,
+        address: snapshot.val().address,
       });
     });
-
+    this.itemRef.ref('stores/highland/imgMarker').on('value', snapshot => {
+      img = snapshot.val();
+    });
     this.itemRef.ref('highlandCor').on('child_added', snapshot => {
       item.push({
+        baby: snapshot.val().features.baby,
+        parking: snapshot.val().features.parking,
+        gamezone: snapshot.val().features.gamezone,
+        aircondition: snapshot.val().features.aircondition,
+        pet: snapshot.val().features.pet,
+        wifi: snapshot.val().features.wifi,
+        address: snapshot.val().address,
         name: snapshot.val().name,
         branch: snapshot.val().branch,
         image: snapshot.val().image,
         latitude: snapshot.val().lat,
         longitude: snapshot.val().long,
-        marker: require('../../assets/highland.png'),
+        marker: img,
         district: snapshot.val().district,
         key: snapshot.key,
       });
     });
+
     this.state = {
-      otherParam: null,
-      isAnimateToMaker: false,
+      //temp
+      selected: false,
+      // press marker
+      keyPressMarker: null,
+      showPressMarker: false,
+      // fearture
+      options: [],
+      isOption: false,
+      flag: null,
+      //search
+      keySearch: null,
+      isCenterMarker: false,
       isSelect: false,
       allowShowMyLocation: false,
       allowShowNearme: false,
@@ -112,6 +139,7 @@ export default class MapScreen extends React.Component {
       markers: [],
       // list coor-marker nearme or popular
       allMarker: item,
+      listNearme: null,
     };
   }
 
@@ -120,92 +148,163 @@ export default class MapScreen extends React.Component {
       this.navigationListener.remove();
       this.navigationListener = null;
     }
+    if (this.navigationListener1) {
+      this.navigationListener1.remove();
+      this.navigationListener1 = null;
+    }
   }
   componentWillUnmount() {
     this.removeNavigationListener();
   }
+
+  goToDetail = (item) => {
+    this.props.navigation.navigate('DetailStore', {
+      key: item,
+    });
+    this.setState({showSearchLocation: false, showPressMarker: false});
+  }
+  
   goToSearchScreen = () => {
     const {navigation} = this.props;
-    this.setState({
-      isAnimateToMaker: false,
-      isSelect: false,
-      otherParam: null,
-      showSearchLocation: false,
-    });
+
     this.navigationListener = navigation.addListener('willFocus', payload => {
-      this.removeNavigationListener();
       const {state} = payload;
       const {params} = state;
       if (params == null) return;
+      if (!this.state.isSelect && this.state.keySearch == params.keySearch) {
+        this.setState({
+          isSelect: false,
+          showSearchLocation: false,
+        });
+        return;
+      }
       //update state with the new params
-      const {otherParam} = params;
+      const {keySearch} = params;
       const {isSelect} = params;
       const {showSearchLocation} = params;
       this.setState({
-        otherParam,
+        keySearch,
         isSelect,
         showSearchLocation,
+        isCenterMarker: true,
       });
     });
+
     navigation.push('Search', {
       returnToRoute: navigation.state,
-      otherParam: this.state.otherParam,
+      keySearch: this.state.keySearch,
       isSelect: this.state.isSelect,
       showSearchLocation: this.state.showSearchLocation,
     });
   };
   goToOptionScreen = () => {
-    this.props.navigation.navigate('Option');
+    const {navigation} = this.props;
+
+    this.navigationListener1 = navigation.addListener('willFocus', payload => {
+      const {state} = payload;
+      const {params} = state;
+      if (params == null) return;
+      if (this.state.flag == params.options && !this.state.options) return;
+      //update state with the new params
+
+      const {isOption} = params;
+      const {options} = params;
+
+      this.setState({
+        isOption,
+        options,
+        flag: params.options,
+      });
+    });
+
+    navigation.navigate('Option', {
+      returnToRoute: navigation.state,
+      isOption: this.state.isOption,
+      options: this.state.options,
+    });
+  };
+  clearOption = () => {
+    this.setState({options: null, isOption: false});
   };
   renderMarker = () => {
     var pos = [];
-    if (this.state.otherParam == null) return;
+    if (this.state.keySearch == null) return;
     if (this.state.isSelect === true) {
-      this.itemRef
-        .ref('tchCor/' + this.state.otherParam)
-        .on('value', snapshot => {
-          pos.latitude = snapshot.val().lat;
-          pos.longitude = snapshot.val().long;
-        });
+      this.state.allMarker.map(i => {
+        if (i.key === this.state.keySearch) {
+          pos.latitude = i.latitude;
+          pos.longitude = i.longitude;
+          pos.img = i.marker;
+        }
+      });
       var regionA = {
         latitude: pos.latitude,
         longitude: pos.longitude,
         latitudeDelta: LATITUDE_DELTA,
         longitudeDelta: LONGITUDE_DELTA,
       };
-      if (this.state.isAnimateToMaker === false) {
-        this.setState({isAnimateToMaker: true});
+      if (this.state.isCenterMarker) {
         this.centerMarker(regionA);
+        this.setState({isCenterMarker: false});
       }
       return (
         <MapView.Marker
           coordinate={{
             latitude: pos.latitude,
             longitude: pos.longitude,
-          }}
-        />
+          }}>
+          <Image style={{width: 48, height: 39}} source={{uri: pos.img}} />
+        </MapView.Marker>
       );
     }
   };
+  // filter option
+
+  getValue = value => (typeof value === 'string' ? value.toUpperCase() : value);
+  filterPlainArray(array, filters) {
+    const filterKeys = Object.keys(filters);
+    return array.filter(item => {
+      // validates all filter criteria
+      return filterKeys.every(key => {
+        // ignores an empty filter
+        if (!filters[key].length) return true;
+        return filters[key].find(
+          filter => this.getValue(filter) === this.getValue(item[key]),
+        );
+      });
+    });
+  }
   // filter marker with 2 picker
   renderListMarker = () => {
+    var listMarker = [];
+    listMarker = this.state.allMarker;
+    if (this.state.isOption) {
+      var temp = this.filterPlainArray(listMarker, this.state.options);
+      listMarker = temp;
+    }
     if (
       this.state.namePicker === 'Tất cả' &&
       this.state.districtPicker === 'Tất cả'
     ) {
-      return this.state.allMarker.map(marker => (
+      return listMarker.map(marker => (
         <MapView.Marker
           coordinate={{
             latitude: marker.latitude,
             longitude: marker.longitude,
           }}
+          onPress={() => {
+            this.setState({showPressMarker: true, keyPressMarker: marker.key});
+          }}
           title={marker.title}
           description={marker.description}>
-          <Image source={marker.marker} />
+          <Image
+            style={{width: 48, height: 39}}
+            source={{uri: marker.marker}}
+          />
         </MapView.Marker>
       ));
     } else
-      return this.state.allMarker
+      return listMarker
         .filter(item => {
           if (this.state.namePicker === 'Tất cả') {
             return this.state.districtPicker === item.district;
@@ -224,14 +323,22 @@ export default class MapScreen extends React.Component {
               latitude: marker.latitude,
               longitude: marker.longitude,
             }}
+            onPress={() => {
+              this.setState({
+                showPressMarker: true,
+                keyPressMarker: marker.key,
+              });
+            }}
             title={marker.title}
             description={marker.description}>
-            <Image source={marker.marker} />
+            <Image
+              style={{width: 48, height: 39}}
+              source={{uri: marker.marker}}
+            />
           </MapView.Marker>
         ));
   };
-
-  renderListMarkerNearme = () => {
+  getListNearme = () => {
     var nearme = [];
     this.state.allMarker.map(item => {
       if (
@@ -241,51 +348,45 @@ export default class MapScreen extends React.Component {
             latitude: this.state.markerPosition.latitude,
             longitude: this.state.markerPosition.longitude,
           },
-          10000,
+          5000,
         )
       )
         nearme.push(item);
     });
-    return nearme.map(marker => (
+    if (this.state.isOption) {
+      var temp = this.filterPlainArray(nearme, this.state.options);
+      nearme = temp;
+    }
+    return nearme;
+  };
+  renderListMarkerNearme = () => {
+    return this.getListNearme().map(marker => (
       <MapView.Marker
         coordinate={{
           latitude: marker.latitude,
           longitude: marker.longitude,
         }}
+        onPress={() => {
+          this.setState({
+            showPressMarker: true,
+            keyPressMarker: marker.key,
+          });
+        }}
         title={marker.title}
         description={marker.description}>
-        <Image source={marker.marker} />
+        <Image style={{width: 48, height: 39}} source={{uri: marker.marker}} />
       </MapView.Marker>
     ));
   };
-  renderCardAfterSearch = () => {
-    var item = [];
-    if (this.state.otherParam == null) return;
-    var key = this.state.otherParam;
-    this.itemRef.ref('tchCor/' + key).on('value', snapshot => {
-      item.name = snapshot.val().name;
-      item.branch = snapshot.val().branch;
-    });
+  renderCard = item => {
     return (
       <View>
         <TouchableOpacity
-          onPress={() =>
-            this.props.navigation.navigate('DetailStore', {
-              key: key,
-            })
-          }>
+          onPress={()=>this.goToDetail(item)} >
           <Card
             image={require('../../assets/h1.jpg')}
-            imageStyle={{
-              height: 120,
-              borderRadius: 20,
-            }}
-            containerStyle={{
-              width: width - 16,
-              marginHorizontal: 8,
-              marginBottom: 8,
-              zIndex: 0,
-            }}>
+            imageStyle={styles.imgCard}
+            containerStyle={styles.containerCard}>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
               <View style={{flex: 9}}>
                 <Text style={{fontSize: 20, fontWeight: 'bold'}}>
@@ -297,7 +398,7 @@ export default class MapScreen extends React.Component {
                 <TouchableOpacity
                   onPress={() =>
                     this.setState({
-                      onDirection: true,
+                      onDirection: !this.state.onDirection,
                       showNearMe: false,
                       sourceDirectionCoor: this.state.markerPosition,
                     })
@@ -305,24 +406,18 @@ export default class MapScreen extends React.Component {
                   <MaterialIcons name="directions" size={40} color="#2132eb" />
                 </TouchableOpacity>
 
-                <View
-                  style={{
-                    backgroundColor: '#fff',
-                    width: 32,
-                    marginTop: -120,
-                    borderRadius: 20,
-                    zIndex: 1,
-                    position: 'absolute',
-                    height: 32,
-                  }}>
+                <View style={styles.btnCancel}>
                   <TouchableOpacity
-                    onPress={() =>
+                    onPress={() => {
                       this.setState({
                         showSearchLocation: false,
                         onDirection: false,
                         isSelect: false,
-                      })
-                    }>
+                        showPressMarker: false,
+                        keySearch: null,
+                        keyPressMarker: null,
+                      });
+                    }}>
                     <MaterialIcons name="cancel" size={32} color="#ccc" />
                   </TouchableOpacity>
                 </View>
@@ -333,25 +428,49 @@ export default class MapScreen extends React.Component {
       </View>
     );
   };
-  renderDetailCard = item => {
-    return (
-      <TouchableOpacity
-        onPress={() => this.props.navigation.navigate('DetailStore')}>
-        <Card
-          image={{uri: item.image}}
-          containerStyle={styles.card}
-          imageProps={{borderTopRightRadius: 10, borderTopLeftRadius: 10}}
-          imageStyle={{
-            height: 70,
-          }}>
-          <Text>{item.name}</Text>
-          <Text style={{marginBottom: 10, color: '#9e9e9e'}}>
-            {item.branch}
-          </Text>
-        </Card>
-      </TouchableOpacity>
-    );
+  renderPressMarkerCard = () => {
+    var item = [];
+    if (this.state.keyPressMarker == null) return;
+    var key = this.state.keyPressMarker;
+
+    this.state.allMarker.map(i => {
+      if (i.key === key) item = i;
+    });
+    return this.renderCard(item);
   };
+  renderCardAfterSearch = () => {
+    var item = [];
+    if (this.state.keySearch == null) return;
+    var key = this.state.keySearch;
+    // this.itemRef.ref('tchCor/' + key).on('value', snapshot => {
+    //   item.name = snapshot.val().name;
+    //   item.branch = snapshot.val().branch;
+    // });
+    this.state.allMarker.map(i => {
+      if (i.key === this.state.keySearch) item = i;
+    });
+    return this.renderCard(item);
+  };
+
+  // renderDetailCard = item => {
+  //   return (
+  //     <TouchableOpacity
+  //       onPress={() => this.props.navigation.navigate('DetailStore')}>
+  //       <Card
+  //         image={{uri: item.image}}
+  //         containerStyle={styles.card}
+  //         imageProps={{borderTopRightRadius: 10, borderTopLeftRadius: 10}}
+  //         imageStyle={{
+  //           height: 70,
+  //         }}>
+  //         <Text>{item.name}</Text>
+  //         <Text style={{marginBottom: 10, color: '#9e9e9e'}}>
+  //           {item.branch}
+  //         </Text>
+  //       </Card>
+  //     </TouchableOpacity>
+  //   );
+  // };
   renderNearme = () => {
     return (
       <FlatList
@@ -363,7 +482,7 @@ export default class MapScreen extends React.Component {
         style={{height: 50, marginBottom: 10}}
         scrollEventThrottle={16}
         snapToAlignment="center"
-        data={this.state.allMarker}
+        data={this.getListNearme()}
         renderItem={({item}) => this.renderDetailCard(item)}
       />
     );
@@ -382,19 +501,27 @@ export default class MapScreen extends React.Component {
   };
   renderDirection = () => {
     var pos = [];
-    if (this.state.otherParam == null) return;
-    if (this.state.isSelect === true) {
-      this.itemRef
-        .ref('tchCor/' + this.state.otherParam)
-        .on('value', snapshot => {
-          pos.latitude = snapshot.val().lat;
-          pos.longitude = snapshot.val().long;
-        });
-    }
+    if (this.state.keySearch) {
+      this.state.allMarker.map(i => {
+        if (i.key === this.state.keySearch) {
+          pos.latitude = i.latitude;
+          pos.longitude = i.longitude;
+        }
+      });
+    } else if (this.state.keyPressMarker) {
+      this.state.allMarker.map(i => {
+        if (i.key === this.state.keyPressMarker) {
+          pos.latitude = i.latitude;
+          pos.longitude = i.longitude;
+        }
+      });
+    } else return;
     return (
       <MapViewDirections
         origin={this.state.sourceDirectionCoor}
         destination={pos}
+        strokeWidth={2}
+        strokeColor="#8e44ad"
         apikey={'AIzaSyCCSoKB9u8RmegTTXFgOko39pNEaLZrnpI'}
         onReady={result => {
           this.mapView.fitToCoordinates(result.coordinates, {
@@ -437,7 +564,9 @@ export default class MapScreen extends React.Component {
           provider={PROVIDER_GOOGLE}
           style={styles.mapView}>
           {this.state.onDirection && this.renderDirection()}
-          {this.renderListMarker()}
+          {!this.state.showNearMe &&
+            !this.state.showSearchLocation &&
+            this.renderListMarker()}
           {this.state.isSelect && this.renderMarker()}
           {this.state.allowShowNearme && this.renderListMarkerNearme()}
         </MapView>
@@ -448,18 +577,9 @@ export default class MapScreen extends React.Component {
               editable={false}
               value={this.state.text}
               underlineColorAndroid="transparent"
-              placeholder={this.state.selected ? 'Selected' : 'Not Selected'}
+              placeholder={'Tìm cửa hàng ...'}
             />
-            <Icon
-              name="search"
-              size={20}
-              style={{
-                position: 'absolute',
-                margin: 24,
-                alignSelf: 'flex-end',
-                paddingRight: 24,
-              }}
-            />
+            <Icon name="search" size={20} style={styles.btnSearch} />
           </View>
         </TouchableOpacity>
         <View
@@ -506,18 +626,23 @@ export default class MapScreen extends React.Component {
               <Picker.Item label="Highlands Coffee" value="Highlands Coffee" />
             </Picker>
           </View>
-          <TouchableOpacity onPress={this.goToOptionScreen}>
-            <View
-              style={{
-                backgroundColor: '#fff',
-                marginLeft: 8,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: '#bdc3c7',
-              }}>
-              <MaterialIcons name="filter-list" size={16} style={{margin: 6}} />
-            </View>
-          </TouchableOpacity>
+          {this.state.isOption ? (
+            <TouchableOpacity onPress={this.clearOption}>
+              <View style={styles.btnOption}>
+                <MaterialIcons name="cancel" size={16} style={{margin: 6}} />
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={this.goToOptionScreen}>
+              <View style={styles.btnOption}>
+                <MaterialIcons
+                  name="filter-list"
+                  size={16}
+                  style={{margin: 6}}
+                />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.middleView} />
         <View style={styles.bottomView}>
@@ -546,7 +671,9 @@ export default class MapScreen extends React.Component {
         </View>
         {this.state.showNearMe &&
           !this.state.showSearchLocation &&
+          !this.state.showPressMarker &&
           this.renderNearme()}
+        {this.state.showPressMarker && this.renderPressMarkerCard()}
         {this.state.showSearchLocation && this.renderCardAfterSearch()}
       </View>
     );
@@ -656,5 +783,37 @@ const styles = StyleSheet.create({
     height: 30,
     marginLeft: 8,
     width: width / 3 + 24,
+  },
+  imgCard: {
+    height: 120,
+    borderRadius: 20,
+  },
+  containerCard: {
+    width: width - 16,
+    marginHorizontal: 8,
+    marginBottom: 8,
+    zIndex: 0,
+  },
+  btnCancel: {
+    backgroundColor: '#fff',
+    width: 32,
+    marginTop: -120,
+    borderRadius: 20,
+    zIndex: 1,
+    position: 'absolute',
+    height: 32,
+  },
+  btnSearch: {
+    position: 'absolute',
+    margin: 24,
+    alignSelf: 'flex-end',
+    paddingRight: 24,
+  },
+  btnOption: {
+    backgroundColor: '#fff',
+    marginLeft: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
   },
 });

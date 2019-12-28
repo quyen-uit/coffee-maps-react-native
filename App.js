@@ -5,6 +5,7 @@
  * @format
  * @flow
  */
+import DetailNewsScreen from './src/components/screens/DetailNewsScreen';
 import DemoMaps from './src/components/screens/demo_maps';
 import SearchScreen from './src/components/screens/SearchScreen';
 import React from 'react';
@@ -23,6 +24,9 @@ import LoadingScreen from './src/components/screens/LoadingScreen';
 import ForgotPasswordScreen from './src/components/screens/ForgotPasswordScreen';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import OptionsPicker from './src/components/screens/OptionsPicker';
+import {TouchableOpacity} from 'react-native-gesture-handler';
+import {View, Text} from 'react-native';
+console.disableYellowBox = true;
 const MapsStack = createStackNavigator({
   Maps: MapScreen,
 });
@@ -109,7 +113,15 @@ const StackNavigator = createStackNavigator({
   Search: {
     screen: SearchScreen,
   },
-  Option: OptionsPicker,
+  Option: {
+    screen: OptionsPicker,
+  },
+  DetailNews: {
+    screen: DetailNewsScreen,
+    navigationOptions: {
+      headerTitle: 'Chi tiết',
+    }
+  }
 });
 StackNavigator.navigationOptions = {
   // Hide the header from AppNavigator stack

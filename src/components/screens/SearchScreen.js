@@ -1,11 +1,13 @@
 /* eslint-disable react-native/no-inline-styles */
 //This is an example code to Add Search Bar Filter on Listview//
 import React, {Component} from 'react';
+import { StackActions, NavigationActions } from 'react-navigation';
 //import react in our code.
 import {firebaseApp} from '../FirebaseApp';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {
   Text,
+  Button,
   StyleSheet,
   View,
   Dimensions,
@@ -26,56 +28,79 @@ export default class SearchScreen extends Component {
   };
   constructor(props) {
     super(props);
-    var items = [];
+    var item = [];
+    var img;
     this.itemRef = firebaseApp.database();
-    this.itemRef.ref('tchCor').on('value', snapshot => {
-      snapshot.forEach(childSnapshot => {
-        items.push({
-          name: childSnapshot.val().name,
-          branch: childSnapshot.val().branch,
-          address: childSnapshot.val().address,
-          lat: childSnapshot.val().lat,
-          long: childSnapshot.val().long,
-          key: childSnapshot.key,
-        });
+    this.itemRef.ref('stores/tch/imgMarker').on('value', snapshot => {
+      img = snapshot.val();
+    });
+    this.itemRef.ref('tchCor').on('child_added', snapshot => {
+      item.push({
+        name: snapshot.val().name,
+        address: snapshot.val().address,
+        branch: snapshot.val().branch,
+        marker: img,
+        district: snapshot.val().district,
+        key: snapshot.key,
       });
     });
+    this.itemRef.ref('stores/highland/imgMarker').on('value', snapshot => {
+      img = snapshot.val();
+    });
+    this.itemRef.ref('highlandCor').on('child_added', snapshot => {
+      item.push({
+        name: snapshot.val().name,
+        branch: snapshot.val().branch,       
+        marker: img,
+        address: snapshot.val().address,
+        district: snapshot.val().district,
+        key: snapshot.key,
+      });
+    });
+
     //setting default state
     this.state = {
       isLoading: false,
       text: '',
       list: [],
-      srcItem: items,
-      testParam: 'noParam',
-      isSelect: false,
+      srcItem: item,
     };
-    this.setState({isSelect: false});
-    this.arrayholder = [];
+    
   }
+
   goToMapScreen = item => {
     const {navigation} = this.props;
     const {routeName, key} = navigation.getParam('returnToRoute');
-    navigation.navigate({
-      routeName,
-      key,
+    
+    const backAction = NavigationActions.navigate({
+      routeName: routeName,
+      key: key,
       params: {
-        otherParam: item.key,
-        isSelect: !this.state.isSelect,
-        isAnimateToMaker: true,
+        keySearch: item.key,
+        isSelect: true,
         showSearchLocation: true,
-      },
+      }
     });
+
+    this.props.navigation.dispatch(backAction);
   };
   fetchDb = text => {
-    var tmp = [];
-
+    var tmp=[];
+    this.setState({list: []});
     var search = text.toLowerCase();
     this.state.srcItem.filter(function(item) {
-      if (item.branch.toLowerCase().includes(search)) {
+      if (item.address.toLowerCase().includes(search)) {
         tmp.push(item);
       }
     });
+    if(tmp.length == 0)
+      this.state.srcItem.filter(function(item) {
+        if (item.branch.toLowerCase().includes(search)) {
+          tmp.push(item);
+        }
+      });
     this.setState({list: tmp});
+
   };
   SearchFilterFunction(text) {
     //passing the inserted text in textinput
@@ -110,6 +135,7 @@ export default class SearchScreen extends Component {
     return (
       //ListView to show with textinput used as search bar
       <View style={styles.viewStyle}>
+     
         <View>
           <TextInput
             style={styles.textInputStyle}
@@ -130,6 +156,8 @@ export default class SearchScreen extends Component {
           />
         </View>
         <FlatList
+        windowSize={height}
+        refreshing={true}
           data={this.state.list}
           showsVerticalScrollIndicator={false}
           renderItem={({item}) => (
@@ -142,7 +170,7 @@ export default class SearchScreen extends Component {
                   borderBottomWidth: 1,
                   marginVertical: 8,
                 }}>
-                <Image source={require('../../assets/highland.png')} />
+                <Image style={{width: 48, height: 39}} source={{uri: item.marker}} />
                 <View style={{width: width - 48, marginLeft: 8}}>
                   <Text style={{fontSize: 18}}>
                     {item.name + ' - ' + item.branch}
@@ -160,9 +188,9 @@ export default class SearchScreen extends Component {
               </View>
             </TouchableOpacity>
           )}
-          enableEmptySections={true}
+
           style={{marginTop: 10}}
-          keyExtractor={item => item.branch}
+          keyExtractor={item => item.key}
         />
       </View>
     );

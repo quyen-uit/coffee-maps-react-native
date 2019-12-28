@@ -42,6 +42,56 @@ async function request_location_runtime_permission() {
     console.warn(err);
   }
 }
+const list = [
+  {
+    pet: true,
+    parking: true,
+  },
+  {
+    pet: false,
+    parking: true,
+  },
+  {
+    pet: false,
+    parking: false,
+  },
+];
+const arr = [
+  {
+    id: 1,
+    car: 'toyota',
+    color: 'blue',
+    year: 2010,
+    trans: 'auto',
+    warrantyEnd: '2013',
+    a: true,
+    b: true,
+    c: true,
+  },
+  {
+    a: true,
+    b: true,
+    c: false,
+    id: 2,
+    car: 'toyota',
+    condition: 'good',
+    color: 'blue',
+    year: 2010,
+    trans: 'manual',
+    warrantyEnd: '2013',
+  },
+  {
+    a: false,
+    b: true,
+    c: true,
+    id: 3,
+    car: 'ford',
+    color: 'yellow',
+    year: 2012,
+    trans: 'auto',
+    warrantyEnd: '2015',
+  },
+];
 export default class DemoMaps extends React.Component {
   constructor(props) {
     super(props);
@@ -68,8 +118,37 @@ export default class DemoMaps extends React.Component {
   async componentDidMount() {
     await request_location_runtime_permission();
   }
-
+   getValue = value => (typeof value === 'string' ? value.toUpperCase() : value);
+   filterPlainArray(array, filters) {
+    const filterKeys = Object.keys(filters);
+    return array.filter(item => {
+      // validates all filter criteria
+      return filterKeys.every(key => {
+        // ignores an empty filter
+        if (!filters[key].length) return true;
+        return filters[key].find(filter => this.getValue(filter) === this.getValue(item[key]));
+      });
+    });
+  }
+   filterArray = (array, filters)=>  {
+    const filterKeys = Object.keys(filters);
+    return array.filter(item => {
+      // validates all filter criteria
+      return filterKeys.every(key => {
+        // ignores non-function predicates
+        if (typeof filters[key] !== 'function') return true;
+        return filters[key](item[key]);
+      });
+    });
+  }
+ 
   centerMarker = data => {
+    // this.filterDemo();
+    const filtersMatchType = {
+      c: [false],
+      b: [false],
+    };
+    console.log(this.filterPlainArray(arr, filtersMatchType));
     this.mapView.animateToRegion(data);
   };
   renderDirection = () => {
@@ -94,14 +173,6 @@ export default class DemoMaps extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <View>
-          <Text style={{fontSize: 25}}>
-            Latitude: {this.state.src.latitude}
-          </Text>
-          <Text style={{fontSize: 25}}>
-            Longitude: {this.state.src.longitude}
-          </Text>
-        </View>
         <MapView
           loadingEnabled={true}
           ref={mapView => (this.mapView = mapView)}
@@ -123,6 +194,10 @@ export default class DemoMaps extends React.Component {
               markerPosition: lastRegion,
             });
           }}>
+          <MapView.Circle center={this.state.src} radius={1000} />
+          <MapView.Marker coordinate={this.state.src} >
+          <Image source={require('../../assets/tch.png')}/>
+          </MapView.Marker>
           {this.state.onDirection && this.renderDirection()}
         </MapView>
         <View style={styles.middleView} />

@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
+
 import {
   SafeAreaView,
   TouchableOpacity,
@@ -9,37 +10,33 @@ import {
   Dimensions,
 } from 'react-native';
 import {coffee_color} from '../../color';
-
+import {StackActions, NavigationActions} from 'react-navigation';
 const {width, height} = Dimensions.get('window');
 
 const DATA = [
   {
-    id: 'i1',
+    id: 'pet',
     name: 'Thú cưng',
   },
   {
-    id: 'i2',
+    id: 'baby',
     name: 'Giữ trẻ',
   },
   {
-    id: 'i3',
+    id: 'gamezone',
     name: 'Khu vui chơi',
   },
   {
-    id: 'i4',
+    id: 'parking',
     name: 'Bãi đỗ Ôtô',
   },
   {
-    id: 'i5',
+    id: 'aircondition',
     name: 'Điều hòa',
   },
   {
-    id: 'i6',
+    id: 'wifi',
     name: 'Wifi',
-  },
-  {
-    id: 'i7',
-    name: 'Ổ điện nhiều',
   },
 ];
 function Item({id, name, selected, onSelect}) {
@@ -55,7 +52,7 @@ function Item({id, name, selected, onSelect}) {
   );
 }
 
-function App() {
+function App({nav}) {
   const [selected, setSelected] = React.useState(new Map());
 
   const onSelect = React.useCallback(
@@ -67,7 +64,7 @@ function App() {
     },
     [selected],
   );
-
+  var optionSelect = [];
   return (
     // <SafeAreaView style={styles.container}>
     //   <FlatList
@@ -84,10 +81,69 @@ function App() {
     //     extraData={selected}
     //   />
     // </SafeAreaView>
-    <View style={{flex: 1, alignItems: 'center', margin: 8}}>
-      <Text style={{color: coffee_color, fontWeight: 'bold', fontSize: 28}}>
-        Tiện ích
-      </Text>
+
+    <View style={{flex: 1, alignItems: 'flex-end', margin: 8}}>
+      <View style={{flexDirection: 'row'}}>
+        <Text
+          style={{
+            color: coffee_color,
+            fontWeight: 'bold',
+            fontSize: 28,
+            marginRight: width / 4,
+          }}>
+          Tiện ích
+        </Text>
+        <TouchableOpacity
+          style={{alignSelf: 'center'}}
+          onPress={() => {
+            
+            console.log('----------------------------------');
+            DATA.map(item => {
+              if (selected.get(item.id)) {
+                var temp;
+                switch (item.id) {
+                  case 'pet':
+                    temp = {value: ['yes'], key: 'pet'};
+                    break;
+                  case 'parking':
+                    temp = {value: ['yes'], key: 'parking'};
+                    break;
+                  case 'aircondition':
+                    temp = {value: ['yes'], key: 'aircondition'};
+                    break;
+                  case 'wifi':
+                    temp = {value: ['yes'], key: 'wifi'};
+                    break;
+                  case 'gamezone':
+                    temp = {value: ['yes'], key: 'gamezone'};
+                    break;
+                  case 'baby':
+                    temp = {value: ['yes'], key: 'baby'};
+                    break;
+                }
+                optionSelect.push(temp);
+              }
+            });
+
+            var mapped = optionSelect.map(item => ({ [item.key]: item.value }) );
+            var newObj = Object.assign({}, ...mapped );
+
+            const {routeName, key} = nav.getParam('returnToRoute');
+
+            const backAction = NavigationActions.navigate({
+              routeName: routeName,
+              key: key,
+              params: {
+                isOption: true,
+                options: newObj,
+              },
+            });
+
+            nav.dispatch(backAction);
+          }}>
+          <Text style={{fontSize: 20}}>Chọn</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.container}>
         {DATA.map(item => {
           return (
@@ -108,7 +164,7 @@ export default class OptionsPicker extends Component {
     headerTransparent: true,
   };
   render() {
-    return <App />;
+    return <App nav={this.props.navigation} />;
   }
 }
 const styles = StyleSheet.create({
@@ -116,6 +172,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginTop: 40,
     justifyContent: 'center',
   },
   item: {
