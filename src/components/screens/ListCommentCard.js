@@ -70,8 +70,6 @@ export default class ListCommentCard extends Component {
                     rating={4}
                   />
                 </View>
-                <Text> - </Text>
-                <Text style={{fontSize: 12}}>{item.date}</Text>
               </View>
             </View>
             <View style={{flex: 1, marginRight: -30}}>
@@ -89,10 +87,6 @@ export default class ListCommentCard extends Component {
               marginRight: 8,
               flexDirection: 'row',
             }}>
-            <TouchableOpacity>
-              <Icon name="heart" size={20} color= {coffee_color} />
-            </TouchableOpacity>
-            <Text>  10</Text>
           </View>
         </View>
       </Card>

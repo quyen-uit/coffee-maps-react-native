@@ -53,31 +53,20 @@ const options = {
     path: 'images',
   },
 };
-var n, a;
-firebaseApp
-  .database()
-  .ref('users/' + firebase.auth().currentUser.uid + '/name')
-  .on('value', snapshot => {
-    n = snapshot.val();
-  });
-firebaseApp
-  .database()
-  .ref('users/' + firebase.auth().currentUser.uid + '/avatar')
-  .on('value', snapshot => {
-    a = snapshot.val();
-  });
+
 export default class ProfileScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       showDialog: false,
-      name: n,
+      showHelpDialog: false,
+      name: null,
       newName: null,
       imgAvatar: require('../../assets/img_demo.jpg'),
       loading: false,
       dp: null,
       image: null,
-      image_uri: a,
+      image_uri: null,
     };
   }
 
@@ -96,16 +85,55 @@ export default class ProfileScreen extends React.Component {
     },
     headerTintColor: '#fff',
   };
-  updateNameofUser = () => {
-    this.setState({name: this.state.newName, showDialog: false});
+  componentDidMount = () => {
+    var n, a;
 
     firebaseApp
       .database()
       .ref('users/' + firebase.auth().currentUser.uid)
-      .set({
-        name: this.state.newName,
-        avatar: this.state.image_uri
+      .on('value', snapshot => {
+        
+        if (snapshot.val()) {
+          a = snapshot.val().avatar;
+          n = snapshot.val().name;
+          this.setState({name: n, image_uri: a});
+          return;
+        } else {
+          firebaseApp
+            .database()
+            .ref('users/' + firebase.auth().currentUser.uid)
+
+            .set({
+              name: 'Người dùng',
+              avatar:
+                'https://firebasestorage.googleapis.com/v0/b/coffeemaps-1571054120730.appspot.com/o/avatar_default.png?alt=media&token=7204d055-2628-49f6-a080-2697f82d0ed1',
+            });
+        }
+        n = 'Người dùng';
+
+        a =
+          'https://firebasestorage.googleapis.com/v0/b/coffeemaps-1571054120730.appspot.com/o/avatar_default.png?alt=media&token=7204d055-2628-49f6-a080-2697f82d0ed1';
+
+        this.setState({name: n, image_uri: a});
       });
+  };
+  updateNameofUser = () => {
+    this.setState({name: this.state.newName, showDialog: false});
+
+    var updates = {};
+    var prev;
+    firebaseApp
+      .database()
+      .ref('users/' + firebase.auth().currentUser.uid)
+      .on('value', snapshot => {
+        prev = snapshot.val();
+      });
+    prev.name = this.state.newName;
+    updates['/users/' + firebase.auth().currentUser.uid] = prev;
+    firebaseApp
+      .database()
+      .ref()
+      .update(updates);
     // firebase.auth().currentUser.updateProfile({
     //   displayName: this.state.newName,
     // });
@@ -159,13 +187,20 @@ export default class ProfileScreen extends React.Component {
         this.uploadImage(response.uri, 'aaaa')
           .then(url => {
             this.setState({image_uri: url});
+            var updates = {};
+            var prev;
             firebaseApp
               .database()
               .ref('users/' + firebase.auth().currentUser.uid)
-              .set({
-                name: this.state.name,
-                avatar: url,
+              .on('value', snapshot => {
+                prev = snapshot.val();
               });
+            prev.avatar = url;
+            updates['/users/' + firebase.auth().currentUser.uid] = prev;
+            firebaseApp
+              .database()
+              .ref()
+              .update(updates);
           })
           .catch(error => console.log(error));
       }
@@ -182,7 +217,7 @@ export default class ProfileScreen extends React.Component {
           <View style={styles.info}>
             <View style={{alignSelf: 'flex-end', marginRight: 16}}>
               <TouchableOpacity onPress={this.pickImg}>
-                <Icon name="edit" size={32} />
+                <Icon name="camera" size={32} />
               </TouchableOpacity>
             </View>
             <Image style={styles.avatar} source={{uri: this.state.image_uri}} />
@@ -208,6 +243,19 @@ export default class ProfileScreen extends React.Component {
               />
             </Dialog.Container>
           </View>
+          <View>
+            <Dialog.Container visible={this.state.showHelpDialog}>
+              <Dialog.Title>Thông tin</Dialog.Title>
+              <Dialog.Description>Nhà phát triển: Nhóm 31</Dialog.Description>
+              <Dialog.Description>
+                Email: 17520963@gm.uit.edu.vn
+              </Dialog.Description>
+              <Dialog.Button
+                label="Thoát"
+                onPress={() => this.setState({showHelpDialog: false})}
+              />
+            </Dialog.Container>
+          </View>
           <Button
             title={'Sửa tên người dùng'}
             buttonStyle={styles.btn}
@@ -224,11 +272,12 @@ export default class ProfileScreen extends React.Component {
           <Button
             title={'Giúp đỡ'}
             buttonStyle={styles.btn}
+            onPress={() => this.setState({showHelpDialog: true})}
             containerStyle={{marginVertical: 4}}
             titleStyle={{color: '#000'}}
           />
           <Button
-            onPress={this.pickImg}
+            onPress={() => this.signOutUser()}
             title={'Thoát'}
             buttonStyle={styles.btn}
             containerStyle={{marginVertical: 4}}

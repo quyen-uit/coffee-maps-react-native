@@ -97,7 +97,9 @@ function App({nav}) {
           style={{alignSelf: 'center'}}
           onPress={() => {
             
-            console.log('----------------------------------');
+           
+            
+            console.log('----------------------------------' );
             DATA.map(item => {
               if (selected.get(item.id)) {
                 var temp;
@@ -124,7 +126,8 @@ function App({nav}) {
                 optionSelect.push(temp);
               }
             });
-
+            var length = optionSelect.length;
+      
             var mapped = optionSelect.map(item => ({ [item.key]: item.value }) );
             var newObj = Object.assign({}, ...mapped );
 
@@ -136,6 +139,7 @@ function App({nav}) {
               params: {
                 isOption: true,
                 options: newObj,
+                lengthOption: length,
               },
             });
 

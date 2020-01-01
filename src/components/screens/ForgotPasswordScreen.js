@@ -6,6 +6,7 @@ import {
   TextInput,
   Text,
   Dimensions,
+  Image,
   TouchableOpacity,
   Button,
 } from 'react-native';
@@ -32,10 +33,14 @@ export default class ForgotPasswordScreen extends React.Component {
     };
   }
   goToLoginScreen = () => {
-    alert('Mail khôi phục mật khẩu đã được gửi.')
+    alert('Mail khôi phục mật khẩu đã được gửi.');
     this.props.navigation.navigate('Login');
   };
   handleForgot = () => {
+    if (this.state.email == '') {
+      alert('Thiếu thông tin!');
+      return;
+    }
     firebase
       .auth()
       .sendPasswordResetEmail(this.state.email)
@@ -46,7 +51,7 @@ export default class ForgotPasswordScreen extends React.Component {
     return (
       <View style={styles.container}>
         <View style={styles.logo_container}>
-          <Icon name="mug-hot" size={64} color={coffee_color} />
+        <Image source={require('../../assets/icon.png')} style={{width: 100, height: 100}} />
           <Text style={{fontSize: 48, fontWeight: 'bold', color: coffee_color}}>
             Coffee Maps
           </Text>

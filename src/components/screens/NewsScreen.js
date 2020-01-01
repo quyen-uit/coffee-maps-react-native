@@ -58,7 +58,20 @@ export default class NewsScreen extends React.Component {
   };
   constructor(props) {
     super(props);
+    
+    this.state = {
+      list: [],
+    };
+  }
+  goToDetail = (item) =>{
+    this.props.navigation.navigate('DetailNews', {
+      value: item,
+    });
+  }
+  componentDidMount(){
     var item = [];
+
+    
     this.itemRef = firebaseApp.database();
     this.itemRef.ref('news').on('child_added', snapshot => {
       item.push({
@@ -68,17 +81,9 @@ export default class NewsScreen extends React.Component {
         cover: snapshot.val().cover,
         date: snapshot.val().date,
       });
-    });
-    this.state = {
-      list: [{l: item, name: 'Tin mới'}, {l: item, name: 'Khuyến mãi'}],
-    };
-  }
-  goToDetail = (item) =>{
-    this.props.navigation.navigate('DetailNews', {
-      value: item,
+      this.setState({list: [{l: item, name: 'Tin mới'}, {l: item, name: 'Khuyến mãi'}]})
     });
   }
-
   renderCard = item => {
     return (
       <Card

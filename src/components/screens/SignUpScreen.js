@@ -6,6 +6,8 @@ import {
   TextInput,
   Text,
   Dimensions,
+  Image,
+  ActivityIndicator,
   TouchableOpacity,
   Button,
 } from 'react-native';
@@ -28,13 +30,13 @@ export default class SignInScreen extends React.Component {
     super(props);
     this.state = {
       showPass: true,
-      firstName: null,
-      lastName: null,
+      name: null,
       press: false,
       email: '',
       password: '',
       retypePass: '',
       errorMessage: null,
+      loading: false,
     };
   }
   handleSignUp = () => {
@@ -42,25 +44,43 @@ export default class SignInScreen extends React.Component {
       alert('Sai pass');
       return;
     }
+
+    if (
+      this.state.name == '' ||
+      this.state.email == '' ||
+      this.state.password == '' ||
+      this.state.retypePass == ''
+    ) {
+      alert('Thiếu thông tin!');
+      return;
+    }
+
     firebase
       .auth()
       .createUserWithEmailAndPassword(this.state.email, this.state.password)
       .then(userCredentials => {
         firebase
           .database()
-          .ref('users/' + userCredentials.uid)
+          .ref('users/' + userCredentials.user.uid)
           .set({
-            firstName: this.state.firstName,
-            lastName: this.state.lastName,
+            name: this.state.name,
+            avatar:
+              'https://firebasestorage.googleapis.com/v0/b/coffeemaps-1571054120730.appspot.com/o/avatar_default.png?alt=media&token=7204d055-2628-49f6-a080-2697f82d0ed1',
           });
         firebase.auth().currentUser.sendEmailVerification();
         return userCredentials.user.updateProfile({
           displayName: this.state.name,
         });
       })
-      .catch(error => this.setState({errorMessage: error.message}));
+      .catch(error => {
+        this.setState({errorMessage: error.message});
+        this.setState({loading: false});
+      });
+    this.setState({loading: true});
   };
-
+  componentDidMount() {
+    this.setState({loading: false});
+  }
   showPass = () => {
     if (this.state.press == true) this.setState({showPass: true, press: false});
     else this.setState({showPass: false, press: true});
@@ -68,88 +88,119 @@ export default class SignInScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <View style={styles.logo_container}>
-          <Icon name="mug-hot" size={64} color={coffee_color} />
-          <Text style={{fontSize: 48, fontWeight: 'bold', color: coffee_color}}>
-            Coffee Maps
-          </Text>
-        </View>
-        {this.state.errorMessage && (
-          <Text style={{color: 'red'}}>{this.state.errorMessage}</Text>
-        )}
+        {this.state.loading ? (
+          <View>
+            <Text>Chờ tí ...</Text>
+            <ActivityIndicator size="large" />
+          </View>
+        ) : (
+          <View>
+            <View style={styles.logo_container}>
+            <Image source={require('../../assets/icon.png')} style={{width: 100, height: 100}} />
+              <Text
+                style={{fontSize: 48, fontWeight: 'bold', color: coffee_color}}>
+                Coffee Maps
+              </Text>
+            </View>
+            {this.state.errorMessage && (
+              <Text style={{color: 'red'}}>{this.state.errorMessage}</Text>
+            )}
 
-        <View>
-          <View>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              underlineColorAndroid="transparent"
-              onChangeText={email => this.setState({email})}
-              value={this.state.email}
-            />
-            <Icon
-              name="user"
-              size={24}
-              style={{position: 'absolute', marginLeft: 10, marginTop: 30}}
-            />
-          </View>
-          <View>
-            <TextInput
-              style={styles.input}
-              placeholder="Mật khẩu"
-              underlineColorAndroid="transparent"
-              secureTextEntry={this.state.showPass}
-              onChangeText={password => this.setState({password})}
-              value={this.state.password}
-            />
-            <Icon
-              name="lock"
-              size={24}
-              style={{position: 'absolute', marginLeft: 10, marginTop: 30}}
-            />
-            <TouchableOpacity
-              onPress={this.showPass}
+            <View>
+              <View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Tên người dùng"
+                  underlineColorAndroid="transparent"
+                  onChangeText={name => this.setState({name})}
+                  value={this.state.name}
+                />
+                <Icon
+                  name="envelope"
+                  size={24}
+                  style={{position: 'absolute', marginLeft: 10, marginTop: 30}}
+                />
+              </View>
+              <View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  underlineColorAndroid="transparent"
+                  onChangeText={email => this.setState({email})}
+                  value={this.state.email}
+                />
+                <Icon
+                  name="user"
+                  size={24}
+                  style={{position: 'absolute', marginLeft: 10, marginTop: 30}}
+                />
+              </View>
+              <View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mật khẩu"
+                  underlineColorAndroid="transparent"
+                  secureTextEntry={this.state.showPass}
+                  onChangeText={password => this.setState({password})}
+                  value={this.state.password}
+                />
+                <Icon
+                  name="lock"
+                  size={24}
+                  style={{position: 'absolute', marginLeft: 10, marginTop: 30}}
+                />
+                <TouchableOpacity
+                  onPress={this.showPass}
+                  style={{
+                    position: 'absolute',
+                    alignSelf: 'flex-end',
+                    marginTop: 31,
+                    paddingRight: 10,
+                  }}>
+                  <Icon
+                    name={this.state.press == false ? 'eye-slash' : 'eye'}
+                    size={24}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nhập lại mật khẩu"
+                  underlineColorAndroid="transparent"
+                  secureTextEntry={this.state.showPass}
+                  onChangeText={retypePass => this.setState({retypePass})}
+                />
+                <Icon
+                  name="lock"
+                  size={24}
+                  style={{position: 'absolute', marginLeft: 10, marginTop: 30}}
+                />
+              </View>
+            </View>
+            <View style={{alignSelf: 'center'}}>
+              <TouchableOpacity
+                style={styles.btnLogin}
+                onPress={this.handleSignUp}>
+                <Text style={{fontSize: 24, color: '#fff'}}>Đăng kí</Text>
+              </TouchableOpacity>
+            </View>
+            <View
               style={{
-                position: 'absolute',
-                alignSelf: 'flex-end',
-                marginTop: 31,
-                paddingRight: 10,
+                flexDirection: 'row',
+                marginTop: 20,
+                alignSelf: 'center',
               }}>
-              <Icon
-                name={this.state.press == false ? 'eye-slash' : 'eye'}
-                size={24}
-              />
-            </TouchableOpacity>
+              <Text>Đã có tài khoản? </Text>
+              <TouchableOpacity
+                onPress={() => this.props.navigation.navigate('Login')}>
+                <Text style={{color: '#f31', fontWeight: 'bold'}}>
+                  Đăng nhập ngay.
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập lại mật khẩu"
-              underlineColorAndroid="transparent"
-              secureTextEntry={this.state.showPass}
-              onChangeText={retypePass => this.setState({retypePass})}
-            />
-            <Icon
-              name="lock"
-              size={24}
-              style={{position: 'absolute', marginLeft: 10, marginTop: 30}}
-            />
-          </View>
-        </View>
-        <View>
-          <TouchableOpacity style={styles.btnLogin} onPress={this.handleSignUp}>
-            <Text style={{fontSize: 24, color: '#fff'}}>Đăng kí</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={{flexDirection: 'row', marginTop: 20}}>
-          <Text>Đã có tài khoản? </Text>
-          <TouchableOpacity
-            onPress={() => this.props.navigation.navigate('Login')}>
-            <Text style={{color: '#f31', fontWeight: 'bold'}}>
-              Đăng nhập ngay.
-            </Text>
-          </TouchableOpacity>
-        </View>
+        )}
       </View>
     );
   }
