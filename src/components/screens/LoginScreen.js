@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  ScrollView,
   TouchableOpacity,
   Button,
 } from 'react-native';
@@ -63,7 +64,7 @@ export default class LoginScreen extends React.Component {
       alert('Thiếu thông tin!');
       return;
     }
-   
+
     firebase
       .auth()
       .signInWithEmailAndPassword(email, password)
@@ -86,108 +87,118 @@ export default class LoginScreen extends React.Component {
             <ActivityIndicator size="large" />
           </View>
         ) : (
-          <View>
-            <View
-              style={{
-                alignSelf: 'flex-end',
-                marginRight: 10,
-                flex: 1,
-                marginTop: 10,
-              }}>
-              <TouchableOpacity onPress={this.onLoginAnonymous}>
-                <Text style={{fontSize: 18}}>Bỏ qua</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.logo_container}>
-              <Image source={require('../../assets/icon.png')} style={{width: 100, height: 100}} />
-              <Text
-                style={{fontSize: 48, fontWeight: 'bold', color: coffee_color}}>
-                Coffee Maps
-              </Text>
-              {this.state.errorMessage && (
-                <Text style={{color: 'red'}}>{this.state.errorMessage}</Text>
-              )}
-              <View>
-                <View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    underlineColorAndroid="transparent"
-                    onChangeText={email => this.setState({email})}
-                    value={this.state.email}
-                  />
-                  <Icon
-                    name="user"
-                    size={24}
-                    style={{
-                      position: 'absolute',
-                      marginLeft: 10,
-                      marginTop: 30,
-                    }}
-                  />
-                </View>
-                <View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Mật khẩu"
-                    underlineColorAndroid="transparent"
-                    secureTextEntry={this.state.showPass}
-                    onChangeText={password => this.setState({password})}
-                    value={this.state.password}
-                  />
-                  <Icon
-                    name="lock"
-                    size={24}
-                    style={{
-                      position: 'absolute',
-                      marginLeft: 10,
-                      marginTop: 30,
-                    }}
-                  />
-                  <TouchableOpacity
-                    onPress={this.showPass}
-                    style={{
-                      position: 'absolute',
-                      alignSelf: 'flex-end',
-                      marginTop: 31,
-                      paddingRight: 10,
-                    }}>
-                    <Icon
-                      name={this.state.press == false ? 'eye-slash' : 'eye'}
-                      size={24}
-                    />
-                  </TouchableOpacity>
-                </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View>
+              <View
+                style={{
+                  alignSelf: 'flex-end',
+                  flex: 1,
+                  marginTop: 10,
+                }}>
+                <TouchableOpacity onPress={this.onLoginAnonymous}>
+                  <Text style={{fontSize: 18}}>Bỏ qua</Text>
+                </TouchableOpacity>
               </View>
-              <View style={{flexDirection: 'row'}}>
+              <View style={styles.logo_container}>
+                <Image
+                  source={require('../../assets/icon.png')}
+                  style={{width: 100, height: 100}}
+                />
+                <Text
+                  style={{
+                    fontSize: 48,
+                    fontWeight: 'bold',
+                    color: coffee_color,
+                  }}>
+                  Coffee Maps
+                </Text>
+                {this.state.errorMessage && (
+                  <Text style={{color: 'red'}}>{this.state.errorMessage}</Text>
+                )}
                 <View>
-                  <TouchableOpacity
-                    style={styles.btnLogin}
-                    onPress={this.handleLogin}>
-                    <Text style={{fontSize: 24, color: '#fff'}}>Đăng nhập</Text>
-                  </TouchableOpacity>
+                  <View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email"
+                      underlineColorAndroid="transparent"
+                      onChangeText={email => this.setState({email})}
+                      value={this.state.email}
+                    />
+                    <Icon
+                      name="user"
+                      size={24}
+                      style={{
+                        position: 'absolute',
+                        marginLeft: 10,
+                        marginTop: 30,
+                      }}
+                    />
+                  </View>
+                  <View>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Mật khẩu"
+                      underlineColorAndroid="transparent"
+                      secureTextEntry={this.state.showPass}
+                      onChangeText={password => this.setState({password})}
+                      value={this.state.password}
+                    />
+                    <Icon
+                      name="lock"
+                      size={24}
+                      style={{
+                        position: 'absolute',
+                        marginLeft: 10,
+                        marginTop: 30,
+                      }}
+                    />
+                    <TouchableOpacity
+                      onPress={this.showPass}
+                      style={{
+                        position: 'absolute',
+                        alignSelf: 'flex-end',
+                        marginTop: 31,
+                        paddingRight: 10,
+                      }}>
+                      <Icon
+                        name={this.state.press == false ? 'eye-slash' : 'eye'}
+                        size={24}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View>
-                  <TouchableOpacity
-                    style={styles.btnSignUp}
-                    onPress={this.goToSignUpScreen}>
-                    <Text style={{fontSize: 24, color: coffee_color}}>
-                      Đăng kí
+                <View style={{flexDirection: 'row'}}>
+                  <View>
+                    <TouchableOpacity
+                      style={styles.btnLogin}
+                      onPress={this.handleLogin}>
+                      <Text style={{fontSize: 20, color: '#fff'}}>
+                        Đăng nhập
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View>
+                    <TouchableOpacity
+                      style={styles.btnSignUp}
+                      onPress={this.goToSignUpScreen}>
+                      <Text style={{fontSize: 20, color: coffee_color}}>
+                        Đăng kí
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={{flexDirection: 'row', marginTop: 20}}>
+                  <Text>Quên mật khẩu ?</Text>
+                  <TouchableOpacity onPress={this.goToForgotScreen}>
+                    <Text style={{color: '#f31', fontWeight: 'bold'}}>
+                      {' '}
+                      Lấy lại mật khẩu.
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
-              <View style={{flexDirection: 'row', marginTop: 20}}>
-                <Text>Quên mật khẩu ?</Text>
-                <TouchableOpacity onPress={this.goToForgotScreen}>
-                  <Text style={{color: '#f31', fontWeight: 'bold'}}>
-                    {' '}
-                    Lấy lại mật khẩu.
-                  </Text>
-                </TouchableOpacity>
-              </View>
             </View>
-          </View>
+          </ScrollView>
         )}
       </View>
     );

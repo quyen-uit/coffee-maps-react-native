@@ -118,7 +118,7 @@ export default class NewsScreen extends React.Component {
   };
   renderListCard = item => {
     return (
-      <View>
+      <View style={{marginBottom: 8}}>
         <View
           style={{
             flexDirection: 'row',

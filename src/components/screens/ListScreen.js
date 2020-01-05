@@ -48,7 +48,10 @@ export default class ListScreen extends React.Component {
     };
   }
   goToMap = key => {
-    this.props.navigation.navigate('Maps', {param: key});
+    this.props.navigation.navigate('Maps', {
+      param: key,
+      keyTab: this.props.navigation.state.key,
+    });
   };
   onDeleteDialog = key => {
     this.setState({showDialogDel: true, deleteKey: key});
@@ -107,7 +110,12 @@ export default class ListScreen extends React.Component {
                         averageStar: averageStar,
                         name: snapshot.val().name,
                         branch: snapshot.val().branch,
-
+                        baby: snapshot.val().features.baby,
+                        parking: snapshot.val().features.parking,
+                        gamezone: snapshot.val().features.gamezone,
+                        aircondition: snapshot.val().features.aircondition,
+                        pet: snapshot.val().features.pet,
+                        wifi: snapshot.val().features.wifi,
                         key: snapshot.key,
                         address: snapshot.val().address,
                       });
@@ -144,7 +152,12 @@ export default class ListScreen extends React.Component {
                         image: img1,
                         name: snapshot.val().name,
                         branch: snapshot.val().branch,
-
+                        baby: snapshot.val().features.baby,
+                        parking: snapshot.val().features.parking,
+                        gamezone: snapshot.val().features.gamezone,
+                        aircondition: snapshot.val().features.aircondition,
+                        pet: snapshot.val().features.pet,
+                        wifi: snapshot.val().features.wifi,
                         key: snapshot.key,
                         address: snapshot.val().address,
                       });
@@ -208,6 +221,12 @@ export default class ListScreen extends React.Component {
                 image: img1,
                 key: snapshot.key,
                 address: snapshot.val().address,
+                baby: snapshot.val().features.baby,
+                parking: snapshot.val().features.parking,
+                gamezone: snapshot.val().features.gamezone,
+                aircondition: snapshot.val().features.aircondition,
+                pet: snapshot.val().features.pet,
+                wifi: snapshot.val().features.wifi,
               });
             }
           });
@@ -244,6 +263,12 @@ export default class ListScreen extends React.Component {
                 image: img1,
                 key: snapshot.key,
                 address: snapshot.val().address,
+                baby: snapshot.val().features.baby,
+                parking: snapshot.val().features.parking,
+                gamezone: snapshot.val().features.gamezone,
+                aircondition: snapshot.val().features.aircondition,
+                pet: snapshot.val().features.pet,
+                wifi: snapshot.val().features.wifi,
               });
             }
           });
@@ -290,7 +315,7 @@ export default class ListScreen extends React.Component {
                   </Text>
                 </View>
               </View>
-              <View style={{flex: 1}}>
+              <View style={{flex: 0}}>
                 <TouchableOpacity onPress={() => this.goToMap(item.key)}>
                   <MaterialIcons name="directions" size={40} color="#2132eb" />
                 </TouchableOpacity>
@@ -345,7 +370,16 @@ export default class ListScreen extends React.Component {
                 borderRadius: 10,
                 backgroundColor: '#fc5c65',
               }}>
-              <Text style={{fontWeight: 'bold', fontSize: 20, alignSelf: 'center', padding: 4, color: '#fff'}}>Tổng: {this.state.allStore.length} cửa hàng</Text>
+              <Text
+                style={{
+                  fontWeight: 'bold',
+                  fontSize: 20,
+                  alignSelf: 'center',
+                  padding: 4,
+                  color: '#fff',
+                }}>
+                Tổng: {this.state.allStore.length} cửa hàng
+              </Text>
             </View>
           }
         />

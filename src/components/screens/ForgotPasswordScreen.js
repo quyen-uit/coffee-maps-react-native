@@ -78,7 +78,7 @@ export default class ForgotPasswordScreen extends React.Component {
             <TouchableOpacity
               style={styles.btnLogin}
               onPress={this.handleForgot}>
-              <Text style={{fontSize: 24, color: '#fff'}}>
+              <Text style={{fontSize: 20, color: '#fff'}}>
                 Lấy lại mật khẩu
               </Text>
             </TouchableOpacity>

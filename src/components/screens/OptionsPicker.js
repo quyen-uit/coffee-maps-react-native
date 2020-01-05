@@ -4,6 +4,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   FlatList,
+  BackHandler,
   StyleSheet,
   Text,
   View,
@@ -96,10 +97,7 @@ function App({nav}) {
         <TouchableOpacity
           style={{alignSelf: 'center'}}
           onPress={() => {
-            
            
-            
-            console.log('----------------------------------' );
             DATA.map(item => {
               if (selected.get(item.id)) {
                 var temp;
@@ -127,9 +125,9 @@ function App({nav}) {
               }
             });
             var length = optionSelect.length;
-      
-            var mapped = optionSelect.map(item => ({ [item.key]: item.value }) );
-            var newObj = Object.assign({}, ...mapped );
+
+            var mapped = optionSelect.map(item => ({[item.key]: item.value}));
+            var newObj = Object.assign({}, ...mapped);
 
             const {routeName, key} = nav.getParam('returnToRoute');
 
@@ -145,7 +143,7 @@ function App({nav}) {
 
             nav.dispatch(backAction);
           }}>
-          <Text style={{fontSize: 20}}>Chọn</Text>
+          <Text style={{fontSize: 20,marginTop: -4}}>Chọn</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.container}>
@@ -167,6 +165,34 @@ export default class OptionsPicker extends Component {
   static navigationOptions = {
     headerTransparent: true,
   };
+  componentDidMount() {
+    this.backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      this.handleBackPress,
+    );
+  }
+
+  componentWillUnmount() {
+    this.backHandler.remove();
+  }
+
+  handleBackPress = () => {
+    const {navigation} = this.props;
+    const {routeName, key} = navigation.getParam('returnToRoute');
+
+    const backAction = NavigationActions.navigate({
+      routeName: routeName,
+      key: key,
+      params: {
+        isOption: false,
+        options: null,
+        lengthOption: 0,
+      },
+    });
+
+    this.props.navigation.dispatch(backAction);
+    return true;
+  };
   render() {
     return <App nav={this.props.navigation} />;
   }
@@ -182,13 +208,13 @@ const styles = StyleSheet.create({
   item: {
     backgroundColor: '#f9c2ff',
     padding: 16,
-    width: width / 3,
+    width: width / 2.5,
     marginVertical: 8,
     marginHorizontal: 8,
     borderRadius: 40,
   },
   name: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#fff',
     alignSelf: 'center',
     fontWeight: 'bold',

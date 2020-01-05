@@ -1,7 +1,7 @@
 /* eslint-disable react-native/no-inline-styles */
 //This is an example code to Add Search Bar Filter on Listview//
 import React, {Component} from 'react';
-import { StackActions, NavigationActions } from 'react-navigation';
+import {StackActions, NavigationActions} from 'react-navigation';
 //import react in our code.
 import {firebaseApp} from '../FirebaseApp';
 import Icon from 'react-native-vector-icons/FontAwesome5';
@@ -13,6 +13,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  BackHandler,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
@@ -50,7 +51,7 @@ export default class SearchScreen extends Component {
     this.itemRef.ref('highlandCor').on('child_added', snapshot => {
       item.push({
         name: snapshot.val().name,
-        branch: snapshot.val().branch,       
+        branch: snapshot.val().branch,
         marker: img,
         address: snapshot.val().address,
         district: snapshot.val().district,
@@ -65,7 +66,6 @@ export default class SearchScreen extends Component {
       list: [],
       srcItem: item,
     };
-    
   }
 
   goToMapScreen = item => {
@@ -78,14 +78,45 @@ export default class SearchScreen extends Component {
       params: {
         keySearch: item.key,
         isSelect: true,
+        flagSearch2: false,
         showSearchLocation: true,
-      }
+      },
     });
 
     this.props.navigation.dispatch(backAction);
   };
+
+  componentDidMount() {
+    this.backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      this.handleBackPress,
+    );
+  }
+
+  componentWillUnmount() {
+    this.backHandler.remove();
+  }
+
+  handleBackPress = () => {
+    const {navigation} = this.props;
+    const {routeName, key} = navigation.getParam('returnToRoute');
+
+    const backAction = NavigationActions.navigate({
+      routeName: routeName,
+      key: key,
+      params: {
+        keySearch: null,
+        flagSearch2: true,
+        isSelect: false,
+        showSearchLocation: false,
+      },
+    });
+
+    this.props.navigation.dispatch(backAction);
+    return true;
+  };
   fetchDb = text => {
-    var tmp=[];
+    var tmp = [];
     this.setState({list: []});
     var search = text.toLowerCase();
     this.state.srcItem.filter(function(item) {
@@ -93,14 +124,13 @@ export default class SearchScreen extends Component {
         tmp.push(item);
       }
     });
-    if(tmp.length == 0)
+    if (tmp.length == 0)
       this.state.srcItem.filter(function(item) {
         if (item.branch.toLowerCase().includes(search)) {
           tmp.push(item);
         }
       });
     this.setState({list: tmp});
-
   };
   SearchFilterFunction(text) {
     //passing the inserted text in textinput
@@ -135,7 +165,6 @@ export default class SearchScreen extends Component {
     return (
       //ListView to show with textinput used as search bar
       <View style={styles.viewStyle}>
-     
         <View>
           <TextInput
             style={styles.textInputStyle}
@@ -156,8 +185,8 @@ export default class SearchScreen extends Component {
           />
         </View>
         <FlatList
-        windowSize={height}
-        refreshing={true}
+          windowSize={height}
+          refreshing={true}
           data={this.state.list}
           showsVerticalScrollIndicator={false}
           renderItem={({item}) => (
@@ -170,7 +199,10 @@ export default class SearchScreen extends Component {
                   borderBottomWidth: 1,
                   marginVertical: 8,
                 }}>
-                <Image style={{width: 48, height: 39}} source={{uri: item.marker}} />
+                <Image
+                  style={{width: 48, height: 39}}
+                  source={{uri: item.marker}}
+                />
                 <View style={{width: width - 48, marginLeft: 8}}>
                   <Text style={{fontSize: 18}}>
                     {item.name + ' - ' + item.branch}
@@ -188,7 +220,6 @@ export default class SearchScreen extends Component {
               </View>
             </TouchableOpacity>
           )}
-
           style={{marginTop: 10}}
           keyExtractor={item => item.key}
         />

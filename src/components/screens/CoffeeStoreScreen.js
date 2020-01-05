@@ -104,22 +104,29 @@ export default class App extends Component {
 
     switch (store.name) {
       case 'The Coffee House': {
-        firebaseApp.database().ref('stores/tch').on('value', snapshot => {
-          store.closeTime = snapshot.val().closeTime;
-          store.openTime = snapshot.val().openTime;
-          store.phone = snapshot.val().phone;
-          this.setState({data: store});
-        });
-
-        firebaseApp.database().ref('menu/tch').on('child_added', snapshot => {
-          mn.push({
-            name: snapshot.val().name,
-            price: snapshot.val().price,
-            image: snapshot.val().image,
-            key: snapshot.key,
+        firebaseApp
+          .database()
+          .ref('stores/tch')
+          .on('value', snapshot => {
+            store.closeTime = snapshot.val().closeTime;
+            store.openTime = snapshot.val().openTime;
+            store.phone = snapshot.val().phone;
+            this.setState({data: store});
           });
-        });
-        firebaseApp.database()
+
+        firebaseApp
+          .database()
+          .ref('menu/tch')
+          .on('child_added', snapshot => {
+            mn.push({
+              name: snapshot.val().name,
+              price: snapshot.val().price,
+              image: snapshot.val().image,
+              key: snapshot.key,
+            });
+          });
+        firebaseApp
+          .database()
           .ref('tchCor')
           .child(store.key)
           .child('start')
@@ -156,21 +163,28 @@ export default class App extends Component {
       }
 
       case 'Highlands Coffee': {
-        firebaseApp.database().ref('stores/highland').on('value', snapshot => {
-          store.closeTime = snapshot.val().closeTime;
-          store.openTime = snapshot.val().openTime;
-          store.phone = snapshot.val().phone;
-          this.setState({data: store});
-        });
-        firebaseApp.database().ref('menu/highland').on('child_added', snapshot => {
-          mn.push({
-            name: snapshot.val().name,
-            price: snapshot.val().price,
-            image: snapshot.val().image,
-            key: snapshot.key,
+        firebaseApp
+          .database()
+          .ref('stores/highland')
+          .on('value', snapshot => {
+            store.closeTime = snapshot.val().closeTime;
+            store.openTime = snapshot.val().openTime;
+            store.phone = snapshot.val().phone;
+            this.setState({data: store});
           });
-        });
-        firebaseApp.database()
+        firebaseApp
+          .database()
+          .ref('menu/highland')
+          .on('child_added', snapshot => {
+            mn.push({
+              name: snapshot.val().name,
+              price: snapshot.val().price,
+              image: snapshot.val().image,
+              key: snapshot.key,
+            });
+          });
+        firebaseApp
+          .database()
           .ref('highlandCor')
           .child(store.key)
           .child('start')
@@ -219,31 +233,41 @@ export default class App extends Component {
     // get comment
     this.setState({oldStart: item, sum: sum, average: averageStar});
     var cmts = [];
+    var flag = false;
     var tmpName, tmpAvatar;
-    firebaseApp.database()
+    firebaseApp
+      .database()
       .ref('comments/')
       .child(store.key)
       .on('child_added', snapshot => {
-        firebaseApp.database()
+        firebaseApp
+          .database()
           .ref('users/')
           .child(snapshot.val().user)
           .on('value', snapshot => {
-            tmpName = snapshot.val().name;
-            tmpAvatar = snapshot.val().avatar;
+            if (snapshot.val()) {
+              tmpName = snapshot.val().name;
+              tmpAvatar = snapshot.val().avatar;
+              flag = true;
+            }
           });
-        if (snapshot.val().text != '')
-          cmts.push({
-            name: tmpName,
-            avatar: tmpAvatar,
-            text: snapshot.val().text,
-            start: snapshot.val().start,
-            key: snapshot.key,
-          });
-        this.setState({listCmt: cmts});
+        if (flag) {
+          if (snapshot.val().text != '')
+            cmts.push({
+              name: tmpName,
+              avatar: tmpAvatar,
+              text: snapshot.val().text,
+              start: snapshot.val().start,
+              key: snapshot.key,
+            });
+          flag = false;
+          this.setState({listCmt: cmts});
+        }
       });
 
     var fav = [];
-    firebaseApp.database()
+    firebaseApp
+      .database()
       .ref('users/' + firebase.auth().currentUser.uid)
       .child('favorites')
       .on('child_added', snapshot => {
@@ -314,7 +338,8 @@ export default class App extends Component {
           .ref()
           .update(updates);
 
-        firebaseApp.database()
+        firebaseApp
+          .database()
           .ref('tchCor')
           .child(this.state.data.key)
           .child('start')
@@ -342,7 +367,8 @@ export default class App extends Component {
           .database()
           .ref()
           .update(updates);
-        firebaseApp.database()
+        firebaseApp
+          .database()
           .ref('highlandCor')
           .child(this.state.data.key)
           .child('start')
@@ -370,8 +396,10 @@ export default class App extends Component {
       .ref('users/' + firebase.auth().currentUser.uid)
       .child('favorites')
       .child(this.state.data.key)
-      .set(true);
-    this.setState({allowBookmark: false});
+      .set(true)
+      .then(() => {
+        this.setState({allowBookmark: false});
+      });
   };
   renderCover = item => {
     return (
@@ -613,6 +641,33 @@ export default class App extends Component {
                 </Text>
               </TouchableOpacity>
             </View>
+            {(this.state.data.parking == 'yes' ||
+              this.state.data.baby == 'yes' ||
+              this.state.data.pet == 'yes' ||
+              this.state.data.wifi == 'yes' ||
+              this.state.data.aircondition == 'yes' ||
+              this.state.data.gamezone == 'yes') && (
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  flexDirection: 'row',
+                  padding: 12,
+                }}>
+                <Icon name="filter" size={24} color={coffee_color} />
+                <Text style={{fontSize: 16, marginLeft: 8}}>
+                  Tiện ích:
+                  {this.state.data.parking == 'yes' ? ' bãi đổ xe hơi, ' : ' '}
+                  {this.state.data.baby == 'yes' ? ' trẻ em,' : ''}
+                  {this.state.data.pet == 'yes' ? ' thú cưng,' : ''}
+                  {this.state.data.wifi == 'yes' ? ' wifi,' : ''}
+                  {this.state.data.aircondition == 'yes'
+                    ? ' phòng máy lạnh,'
+                    : ', '}
+                  {this.state.data.gamezone == 'yes' ? ' khu trò chơi.' : ''}
+                </Text>
+              </View>
+            )}
           </View>
           <View style={{borderColor: '#ccc', borderWidth: 1, padding: 10}}>
             <View
