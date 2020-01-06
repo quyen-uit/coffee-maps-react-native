@@ -149,6 +149,7 @@ export default class MapScreen extends React.Component {
       oldKeySearch: null,
       oldKeyList: null,
       flagSearch2: false,
+      flagDetail: false,
       // press marker
       // keyPressMarker: null,
       // showPressMarker: false,
@@ -221,12 +222,26 @@ export default class MapScreen extends React.Component {
   }
 
   goToDetail = item => {
+    this.setState({
+      flagDetail: true,
+      onDirection: false,
+      keySearch: item.key,
+      showSearchLocation: true,
+      isSelect: true,
+      isCenterMarker: true,
+    });
+
     this.props.navigation.navigate('DetailStore', {
       key: item,
     });
-    // this.setState({showSearchLocation: true, keySearch: item});
   };
+  goToDetailNear = item => {
+   
 
+    this.props.navigation.navigate('DetailStore', {
+      key: item,
+    });
+  };
   goToSearchScreen = () => {
     const {navigation} = this.props;
     this.removeNavigationListener();
@@ -555,6 +570,7 @@ export default class MapScreen extends React.Component {
             onPress={() => {
               this.removeNavigationListener();
               this.setState({
+                flagDetail: false,
                 showSearchLocation: false,
                 onDirection: false,
                 isSelect: false,
@@ -595,7 +611,7 @@ export default class MapScreen extends React.Component {
 
   renderDetailCard = item => {
     return (
-      <TouchableOpacity onPress={() => this.goToDetail(item)}>
+      <TouchableOpacity onPress={() => this.goToDetailNear(item)}>
         <Card
           image={{uri: item.image}}
           containerStyle={styles.card}
@@ -644,6 +660,7 @@ export default class MapScreen extends React.Component {
     });
 
     this.navigationListener2 = navigation.addListener('willFocus', payload => {
+      if (this.state.flagDetail) return;
       if (
         this.state.oldKeyList ==
         navigation.dangerouslyGetParent().getParam('param')
